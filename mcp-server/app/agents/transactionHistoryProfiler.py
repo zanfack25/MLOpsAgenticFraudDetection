@@ -20,7 +20,7 @@ def train_agent2():
     df = load_transaction_history()
     df_ts = df[['event_timestamp', 'order_price']].copy()
     df_ts = df_ts.rename(columns={'event_timestamp': 'ds', 'order_price': 'y'})
-    df_ts['ds'] = pd.to_datetime(df_ts['ds']).dt.tz_localize(None
+    df_ts['ds'] = pd.to_datetime(df_ts['ds']).dt.tz_localize(None)
 
     model = Prophet()
     model.fit(df_ts)
