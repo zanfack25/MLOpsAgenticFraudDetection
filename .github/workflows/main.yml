@@ -36,10 +36,10 @@ jobs:
         pip install -r requirements.txt
         
     - name: Train all agents
-      run: python app/train_all_agents.py
+      run: python mcp-server/app/train_all_agents.py
 
     - name: Evaluate models
-      run: python app/evaluate.py
+      run: python mcp-server/app/evaluate.py
 
     - name: Build Docker image
       run: |
