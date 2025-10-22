@@ -1,0 +1,58 @@
+name: Build and Train MCP Server
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-train-evaluate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update && sudo apt-get install -y \
+          build-essential \
+          libatlas-base-dev \
+          libopenblas-dev \
+          liblapack-dev \
+          gfortran \
+          curl \
+          git
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r app/requirements.txt
+
+    - name: Train all agents
+      run: python app/train_all_agents.py
+
+    - name: Evaluate models
+      run: python app/evaluate.py
+
+    - name: Build Docker image
+      run: |
+        docker build -t mcp-server:latest .
+
+    # Optional: Push to Docker Hub
+    # - name: Log in to Docker Hub
+    #   uses: docker/login-action@v2
+    #   with:
+    #     username: ${{ secrets.DOCKER_USERNAME }}
+    #     password: ${{ secrets.DOCKER_PASSWORD }}
+
+    # - name: Push image to Docker Hub
+    #   run: |
+    #     docker tag mcp-server:latest your-dockerhub-username/mcp-server:latest
+    #     docker push your-dockerhub-username/mcp-server:latest
