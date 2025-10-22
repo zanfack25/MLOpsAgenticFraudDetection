@@ -36,7 +36,7 @@ jobs:
         pip install -r requirements.txt
         
     - name: Train all agents
-      run: python mcp-server/app/train_all_agents.py
+      run: PYTHONPATH=mcp-server python mcp-server/app/train_all_agents.py
 
     - name: Evaluate models
       run: python mcp-server/app/evaluate.py
