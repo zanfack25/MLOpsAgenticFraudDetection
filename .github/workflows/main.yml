@@ -59,10 +59,11 @@ jobs:
                       - -c
                       - |
                         echo "Starting training..."
-                        cd /mp-server
+                        cd /app
                         python app/train_all_agents.py
                         echo "Training complete. Starting evaluation..."
                         python app/evaluate_all_agents.py
+                        echo "Evaluation complete."
                     env:
                       - name: MODEL_BUCKET
                         value: fraud-detection-models
@@ -73,5 +74,5 @@ jobs:
                       limits:
                         cpu: "1000m"
                         memory: "1024Mi"
-                restartPolicy: Never
+              restartPolicy: Never
           EOF
