@@ -74,5 +74,5 @@ jobs:
                       limits:
                         cpu: "1000m"
                         memory: "1024Mi"
-              restartPolicy: Never
+                restartPolicy: Never
           EOF
