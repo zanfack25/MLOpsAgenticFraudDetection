@@ -9,14 +9,13 @@ WORKDIR /app
 # Install system dependencies required by scientific libraries
 RUN apt-get update && apt-get install -y \
     build-essential \
-    libatlas-base-dev \
-    libopenblas-dev \
+    libblas-dev \
     liblapack-dev \
+    libopenblas-dev \
     gfortran \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
-
 # Copy dependency list and install Python packages
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
