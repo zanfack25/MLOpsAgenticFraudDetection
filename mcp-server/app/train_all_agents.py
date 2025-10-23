@@ -10,7 +10,7 @@ from agents import contextAnalyzer, transactionHistoryProfiler, fraudPatternMatc
 
 # S3 Configuration
 s3 = boto3.client('s3')
-BUCKET_NAME = os.getenv("MODEL_BUCKET", "fraud-detection-models")
+BUCKET_NAME = os.getenv("MODEL_BUCKET", "dav-fraud-detection-models")
 
 # Local model output directory
 LOCAL_MODEL_DIR = "models"
