@@ -13,7 +13,7 @@ from models.metadata_text import MetadataText
 
 # Initialize S3 client
 s3 = boto3.client("s3")
-BUCKET_NAME = os.getenv("MODEL_BUCKET", "fraud-detection-models")
+BUCKET_NAME = os.getenv("MODEL_BUCKET", "dav-fraud-detection-models")
 LOCAL_MODEL_DIR = "models"
 os.makedirs(LOCAL_MODEL_DIR, exist_ok=True)
 
