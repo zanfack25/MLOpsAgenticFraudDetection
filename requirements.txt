@@ -4,8 +4,10 @@ pandas
 boto3
 scikit-learn
 prophet
+cmdstanpy
 xgboost
 transformers
 py2neo
 numpy
 torch
+joblib
