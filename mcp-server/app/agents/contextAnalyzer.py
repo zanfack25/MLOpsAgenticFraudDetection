@@ -12,7 +12,7 @@
 #
 #     Scoring: score = 1 - model.decision_function(X)
 from sklearn.ensemble import IsolationForest
-from app.models.device_ip_logs import load_device_ip_logs, DeviceIPLog
+from models.device_ip_logs import load_device_ip_logs, DeviceIPLog
 import pandas as pd
 
 # 🔧 Training Function
