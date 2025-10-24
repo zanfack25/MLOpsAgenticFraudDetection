@@ -21,7 +21,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ca-central-1
 
       - name: Log in to Amazon ECR
         id: login-ecr
@@ -39,16 +39,16 @@ jobs:
 
       - name: Update kubeconfig to connect to EKS
         run: |
-          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name FraudDetectionEKSCluster
+          aws eks update-kubeconfig --region ca-central-1 --name FraudDetectionEKSCluster
 
-      - name: Run training job on EKS
+      - name: Deploy Job to EKS
         run: |
-          kubectl delete job train-agents-job --ignore-not-found
+          kubectl delete job train-and-evaluate-agents-job --ignore-not-found
           cat <<EOF | kubectl apply -f -
           apiVersion: batch/v1
           kind: Job
           metadata:
-            name: train-agents-job
+            name: train-and-evaluate-agents-job
             namespace: default
           spec:
             template:
@@ -58,57 +58,27 @@ jobs:
               spec:
                 containers:
                   - name: fraud-detection
-                    image: ${{ env.ECR_IMAGE }}
+                    image: ${ECR_IMAGE}
                     command:
-                      - python
-                      - app/train_all_agents.py
+                      - /bin/bash
+                      - -c
+                      - |
+                        echo "Starting training..."
+                        python app/train_all_agents.py
+                        echo "Training complete. Starting evaluation..."
+                        python app/evaluate_all_agents.py
+                        echo "Evaluation complete."
                     env:
                       - name: MODEL_BUCKET
-                        value: ${{ env.MODEL_BUCKET }}
+                        value: fraud-detection-models
                     resources:
                       requests:
                         cpu: "2000m"
                         memory: "4Gi"
+                        ephemeral-storage: "20Gi"
                       limits:
                         cpu: "4000m"
                         memory: "8Gi"
-                restartPolicy: Never
-          EOF
-
-      - name: Wait for training job to complete
-        run: |
-          kubectl wait --for=condition=complete --timeout=600s job/train-agents-job
-
-      - name: Run evaluation job on EKS
-        run: |
-          kubectl delete job evaluate-agents-job --ignore-not-found
-          cat <<EOF | kubectl apply -f -
-          apiVersion: batch/v1
-          kind: Job
-          metadata:
-            name: evaluate-agents-job
-            namespace: default
-          spec:
-            template:
-              metadata:
-                labels:
-                  app: fraud-detection
-              spec:
-                containers:
-                  - name: fraud-detection
-                    image: ${{ env.ECR_IMAGE }}
-                    command:
-                      - python
-                      - app/evaluate_all_agents.py
-                    env:
-                      - name: MODEL_BUCKET
-                        value: ${{ env.MODEL_BUCKET }}
-                    resources:
-                      requests:
-                        cpu: "2000m"
-                        memory: "4Gi"
-                      limits:
-                        cpu: "4000m"
-                        memory: "8Gi"
+                        ephemeral-storage: "40Gi"
                 restartPolicy: Never
           EOF
