@@ -1,8 +1,8 @@
 
 from pydantic import BaseModel
 import pandas as pd
-from app.models.device_ip_logs import load_device_ip_logs
-from app.models.transaction_history import load_transaction_history
+from models.device_ip_logs import load_device_ip_logs
+from models.transaction_history import load_transaction_history
 
 class MetadataText(BaseModel):
     ip_address: str
