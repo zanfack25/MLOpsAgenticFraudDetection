@@ -71,7 +71,7 @@ jobs:
                         echo "Evaluation complete."
                     env:
                       - name: MODEL_BUCKET
-                        value: fraud-detection-models
+                        value: dav-fraud-detection-models
                     resources:
                       requests:
                         cpu: "2000m"
