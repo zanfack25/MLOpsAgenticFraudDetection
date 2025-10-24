@@ -13,8 +13,8 @@
 
 
 from fastapi import FastAPI
-from app.agents import agent1, agent2, agent3, aggregator
-from app.models.schemas import TransactionInput
+from agents import agent1, agent2, agent3, aggregator
+from models.schemas import TransactionInput
 
 app = FastAPI()
 
