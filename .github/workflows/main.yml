@@ -65,9 +65,9 @@ jobs:
                       - -c
                       - |
                         echo "Starting training..."
-                        python app/train_all_agents.py
+                        python train_all_agents.py
                         echo "Training complete. Starting evaluation..."
-                        python app/evaluate_all_agents.py
+                        python evaluate_all_agents.py
                         echo "Evaluation complete."
                     env:
                       - name: MODEL_BUCKET
