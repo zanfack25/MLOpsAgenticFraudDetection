@@ -23,25 +23,11 @@ COPY mcp-server/app/ ./
 
 
 # Preload datasets from S3 into the image
-# Environment variable for dataset bucket
-ARG DATA_BUCKET="dav-fraud-detection-bucket"
-ENV DATA_BUCKET=${DATA_BUCKET}
+# Dockerfile
+COPY ./entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 
-# Install AWS CLI v2
-RUN apt-get update && \
-    apt-get install -y curl unzip && \
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
-    unzip awscliv2.zip && \
-    ./aws/install && \
-    rm -rf awscliv2.zip aws
-# Create data directory
-RUN mkdir -p /app/data
-# Download all datasets from S3 into container
-RUN aws s3 cp s3://${DATA_BUCKET}/ContextDataLogs/Cifer-Fraud-Detection-Dataset-AF-part-10-14.csv /app/data/device_ip_logs.csv && \
-    aws s3 cp s3://${DATA_BUCKET}/TransactionsHistoryLogs/transactions_context_data_logs_100k.csv /app/data/transaction_history.csv
-
-# Verify dataset presence (optional)
-RUN ls -lh /app/data
 # Make sure Python can find the app module
 ENV PYTHONPATH=/app
 
