@@ -13,7 +13,7 @@ from transformers import BertTokenizer, BertModel
 from xgboost import XGBClassifier
 import torch
 import numpy as np
-from app.models.metadata_text import load_metadata_text, MetadataText
+from models.metadata_text import load_metadata_text, MetadataText
 
 # 🔧 Training Function
 
