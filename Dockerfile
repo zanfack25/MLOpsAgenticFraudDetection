@@ -17,7 +17,7 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Ensure app is copied to the correct location
-COPY mcp-server/app ./app
+COPY mcp-server/app/ ./
 
 # Make sure Python can find the app module
 ENV PYTHONPATH=/app
