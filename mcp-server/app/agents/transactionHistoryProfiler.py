@@ -13,7 +13,7 @@
 from prophet import Prophet
 import pandas as pd
 import numpy as np
-from app.models.transaction_history import load_transaction_history, TransactionHistory
+from models.transaction_history import load_transaction_history, TransactionHistory
 
 # 🔧 Training Function
 def train_agent2():
