@@ -1,4 +1,4 @@
-# Dockerfile for EKS deployment with preloaded datasets
+# Dockerfile for EKS deployment with preloaded datasets --
 FROM python:3.11-slim
 
 WORKDIR /app
