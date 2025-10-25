@@ -61,7 +61,7 @@ def evaluate_model(agent_id, model):
         score = contextAnalyzer.evaluate_agent1(model, sample_tx)
     elif agent_id == 2:
         score = transactionHistoryProfiler.evaluate_agent2(model, sample_tx)
-    elif agent_id == 4:
+    elif agent_id == 3:
         score = fraudPatternMatcher.evaluate_agent4(model, sample_meta)
     else:
         print(f"Unknown agent ID {agent_id}")
@@ -90,7 +90,7 @@ def upload_evaluation_results(results):
 
 def main():
     results = {}
-    agent_ids = [1, 2, 4]
+    agent_ids = [1, 2, 3]
 
     for agent_id in agent_ids:
         prefix = f"agents/agent{agent_id}/"
