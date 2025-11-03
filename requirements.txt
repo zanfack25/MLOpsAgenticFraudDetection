@@ -11,3 +11,5 @@ py2neo
 numpy
 torch
 joblib
+requests
+pydantic
