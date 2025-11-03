@@ -15,7 +15,7 @@ from sklearn.ensemble import IsolationForest
 from models.device_ip_logs import load_device_ip_logs, DeviceIPLog
 import pandas as pd
 
-# 🔧 Training Function
+# Training Function
 
 def train_agent1():
     """
@@ -23,18 +23,18 @@ def train_agent1():
     Returns trained model.
     """
     df = load_device_ip_logs()
-    features = df[['amount', 'oldbalanceOrg', 'newbalanceOrig']]
+    features = df[['step','type','amount','nameOrig','oldbalanceOrg','newbalanceOrig','nameDest','oldbalanceDest','newbalanceDest','isFraud','isFlaggedFraud']]
     model = IsolationForest(random_state=42)
     model.fit(features)
     return model
 
-# 🔍 Evaluation Function
+# Evaluation Function
 
 def evaluate_agent1(model, tx: DeviceIPLog):
     """
     Evaluates a single transaction using trained Isolation Forest model.
     Returns anomaly score.
     """
-    features = [[tx.amount, tx.oldbalanceOrg, tx.newbalanceOrig]]
+    features = [[tx.step,tx.type,tx.amount,tx.nameOrig,tx.oldbalanceOrg,tx.newbalanceOrig,tx.nameDest,tx.oldbalanceDest,tx.newbalanceDest,tx.isFraud,tx.isFlaggedFraud]]
     score = 1 - model.decision_function(features)[0]
     return score
