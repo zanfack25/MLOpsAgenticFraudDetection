@@ -15,7 +15,7 @@ import torch
 import numpy as np
 from models.metadata_text import load_metadata_text, MetadataText
 
-# 🔧 Training Function
+#  Training Function
 
 def train_agent4():
     """
@@ -41,7 +41,7 @@ def train_agent4():
     model.fit(X, y)
     return model
 
-# 🔍 Evaluation Function
+#  Evaluation Function
 
 def evaluate_agent4(model, tx: MetadataText):
     """
