@@ -1,0 +1,119 @@
+# app/AgentsAPI/context_analyser_api.py
+# ------------------------------------------------------------
+# Agent 1: Context Analyzer (Isolation Forest – Full Features)
+#
+# Uses all fields from DeviceIPLog as model input.
+# Model loaded from S3 and exposed via FastAPI.
+# ------------------------------------------------------------
+
+from fastapi import FastAPI
+from pydantic import BaseModel
+import boto3
+import joblib
+import tempfile
+import os
+import pandas as pd
+
+# ------------------------------------------------------------
+# FastAPI Initialization
+# ------------------------------------------------------------
+app = FastAPI(title="Agent 1 - Context Analyzer ")
+
+# ------------------------------------------------------------
+# Configuration
+# ------------------------------------------------------------
+
+REGION = "ca-central-1"
+BUCKET_NAME = os.getenv("MODEL_BUCKET", "dav-fraud-detection-models")
+LOCAL_MODEL_DIR = "models"
+AGENT_PREFIX = "agents/agent1/"
+
+os.makedirs(LOCAL_MODEL_DIR, exist_ok=True)
+
+# ------------------------------------------------------------
+# S3 Client
+# ------------------------------------------------------------
+s3 = boto3.client("s3", region_name=REGION)
+
+
+# ------------------------------------------------------------
+# Full Data Model (All Fields)
+# ------------------------------------------------------------
+class DeviceIPLog(BaseModel):
+    step: int
+    type: str
+    amount: float
+    nameOrig: str
+    oldbalanceOrg: float
+    newbalanceOrig: float
+    nameDest: str
+    oldbalanceDest: float
+    newbalanceDest: float
+    isFraud: int
+    isFlaggedFraud: int
+
+
+# ------------------------------------------------------------
+# Model Loader
+# ------------------------------------------------------------
+# ------------------------------------------------------------
+# Utility Functions (from evaluate_all_agents.py)
+# ------------------------------------------------------------
+def get_latest_model_key(agent_prefix: str):
+    """Retrieve the latest model file for a given agent prefix from S3."""
+    response = s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=agent_prefix)
+    if "Contents" not in response:
+        print(f" No models found for prefix {agent_prefix}")
+        return None
+    latest = sorted(response["Contents"], key=lambda x: x["LastModified"], reverse=True)[0]
+    return latest["Key"]
+
+
+def download_model(s3_key: str):
+    """Download model from S3 to local directory."""
+    local_path = os.path.join(LOCAL_MODEL_DIR, os.path.basename(s3_key))
+    s3.download_file(BUCKET_NAME, s3_key, local_path)
+    print(f"Downloaded model: s3://{BUCKET_NAME}/{s3_key} → {local_path}")
+    return local_path
+
+
+# ------------------------------------------------------------
+# Load Latest Model Automatically at Startup
+# ------------------------------------------------------------
+def load_latest_model():
+    print(" Searching for the latest model in S3...")
+    key = get_latest_model_key(AGENT_PREFIX)
+    if not key:
+        raise RuntimeError(f"No model found for prefix {AGENT_PREFIX}")
+
+    local_path = download_model(key)
+    print(f"Loading model from {local_path}")
+    model = joblib.load(local_path)
+    print("Model loaded successfully.")
+    return model, key
+
+
+model, model_key = load_latest_model()
+
+# ------------------------------------------------------------
+# Prediction API Endpoint
+# ------------------------------------------------------------
+@app.post("/predict")
+def predict(tx: DeviceIPLog):
+    """
+    Evaluate a transaction log using the full DeviceIPLog schema.
+    All numeric and encoded features are passed into the Isolation Forest model.
+    """
+    df = pd.DataFrame([tx.dict()])
+
+    # Convert all possible numeric fields and categorical encodings
+    df = df.apply(pd.to_numeric, errors="ignore")
+
+    score = 1 - model.decision_function(df)[0]
+
+    return {
+        "agent_id": 1,
+        "model_key": model_key,
+        "model_name": "IsolationForest",
+        "anomaly_score": float(score)
+    }
