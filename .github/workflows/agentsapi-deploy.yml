@@ -1,0 +1,74 @@
+name: Build and Deploy Agents API Container
+
+on:
+  workflow_run:
+    workflows: ["Build and Deploy Agent Training Container"]
+    types:
+      - completed
+
+env:
+  AWS_REGION: ca-central-1
+  ECR_REGISTRY: 111376855663.dkr.ecr.ca-central-1.amazonaws.com
+  ECR_REPOSITORY: fraud-detection-agentsapi
+  IMAGE_TAG: latest
+
+jobs:
+  build-and-deploy-agentsapi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Authenticate Docker to ECR
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | \
+          docker login --username AWS --password-stdin $ECR_REGISTRY
+
+      - name: Build Agents API Image
+        run: |
+          docker build -f mcp-server/app/AgentsAPI/Dockerfile -t fraud-detection-agentsapi .
+          docker tag fraud-detection-agentsapi:latest $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Push Agents API Image to ECR
+        run: docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Deploy API to EKS
+        run: |
+          aws eks update-kubeconfig --region $AWS_REGION --name FraudDetectionEKSCluster
+          kubectl delete deployment fraud-detection-api --ignore-not-found
+          cat <<EOF | kubectl apply -f -
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: fraud-detection-api
+          spec:
+            replicas: 2
+            selector:
+              matchLabels:
+                app: fraud-api
+            template:
+              metadata:
+                labels:
+                  app: fraud-api
+              spec:
+                containers:
+                  - name: fraud-detection-api
+                    image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+                    ports:
+                      - containerPort: 8000
+                    resources:
+                      requests:
+                        cpu: "1000m"
+                        memory: "2Gi"
+                      limits:
+                        cpu: "2000m"
+                        memory: "4Gi"
+          EOF
