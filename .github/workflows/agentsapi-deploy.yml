@@ -1,4 +1,4 @@
-name: Build and Deploy Agents API Container
+name: Build_and_Deploy_Agents_API_Container
 
 on:
   push:
@@ -14,6 +14,7 @@ env:
   ECR_REGISTRY: 111376855663.dkr.ecr.ca-central-1.amazonaws.com
   ECR_REPOSITORY: fraud-detection-agentsapi
   IMAGE_TAG: latest
+  SERVICE_ACCOUNT: fraud-detection-sa
 
 jobs:
   build-and-deploy-agentsapi:
@@ -62,11 +63,17 @@ jobs:
                 labels:
                   app: fraud-api
               spec:
+                serviceAccountName: ${SERVICE_ACCOUNT}
                 containers:
                   - name: fraud-detection-api
                     image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
                     ports:
                       - containerPort: 8000
+                    env:
+                      - name: AWS_REGION
+                        value: "${AWS_REGION}"
+                      - name: MODEL_BUCKET
+                        value: "dav-fraud-detection-models"
                     resources:
                       requests:
                         cpu: "1000m"
