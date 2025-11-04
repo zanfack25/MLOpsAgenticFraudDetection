@@ -1,4 +1,4 @@
-name: Build and Deploy Container to EKS 
+name: Build_and_Deploy_AgentAI_Container_to_EKS 
 
 on:
   push:
