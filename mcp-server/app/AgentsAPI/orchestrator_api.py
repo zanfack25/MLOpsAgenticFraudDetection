@@ -1,15 +1,16 @@
-# app/api/orchestrator_api.py
+
+# app/AgentsAPI/orchestrator_api.py
 # ------------------------------------------------------------
 # Fraud Detection Orchestrator: Calls all agents and aggregates
 # ------------------------------------------------------------
 
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import requests
 import os
 from typing import Dict, Any, List
 
-app = FastAPI(title="Fraud Detection Orchestrator (Full Features)")
+router = APIRouter(title="Fraud Detection Orchestrator")
 
 # ------------------------------------------------------------
 # Agent & Aggregator Endpoints (Configurable via Env)
@@ -90,13 +91,10 @@ def call_aggregator(scores: List[float]) -> Dict[str, Any]:
 # ------------------------------------------------------------
 # Main Orchestration Endpoint
 # ------------------------------------------------------------
-@app.post("/fraud-check")
+@router.post("/fraud-check")
 def fraud_check(data: FraudInput):
     """
-    Orchestrates all 3 agents and aggregates their scores:
-      - Agent 1 → Context Analyzer
-      - Agent 2 → Transaction History Profiler
-      - Agent 3 → Metadata Fraud Pattern Matcher
+    Orchestrates all 3 agents and aggregates their scores.
     Returns structured agent scores and a final risk score.
     """
     payload = data.dict()
@@ -119,3 +117,5 @@ def fraud_check(data: FraudInput):
         "final_risk_score": agg_data.get("final_score"),
         "explanation": agg_data.get("explanation")
     }
+
+  
