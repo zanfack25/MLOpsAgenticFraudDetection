@@ -103,7 +103,7 @@ def evaluate_model(agent_id, model):
             product_category="Gift Cards",
             metadata="User accessed from new device, high-value purchase, late night."
         )
-        score = fraudPatternMatcher.evaluate_agent4(model, sample_meta)
+        score = fraudPatternMatcher.evaluate_agent3(model, sample_meta)
 
     else:
         print(f"Unknown agent ID: {agent_id}")
