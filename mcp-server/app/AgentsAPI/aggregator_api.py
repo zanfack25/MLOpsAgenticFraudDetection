@@ -1,19 +1,20 @@
 # app/AgentsAPI/aggregator_api.py
 # ------------------------------------------------------------
-# Aggregator Agent: Combines risk scores from Agents 1, 2, and 3
+# Aggregator Agent: ombines risk scores outputs from Agents 1, 2, and 3 into a final risk score.
 # ------------------------------------------------------------
 
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from fastapi import APIRouter
 
-app = FastAPI(title="Aggregator Agent", description="Combines outputs from Agents 1, 2, and 3 into a final risk score.")
+
+router = APIRouter()
 
 # ------------------------------------------------------------
 # Default Ensemble Weights
 # ------------------------------------------------------------
 DEFAULT_WEIGHTS = [0.4, 0.3, 0.3]
-
 
 # ------------------------------------------------------------
 # Request Schema
@@ -24,11 +25,17 @@ class ScoresInput(BaseModel):
         None, description="Optional custom weights for the agents (must match 3 scores)."
     )
 
+# ------------------------------------------------------------
+# Test endpoint
+# ------------------------------------------------------------
+@router.get("/")
+def aggregator():
+    return {"message": "Aggregator works"}
 
 # ------------------------------------------------------------
 # Aggregation Logic
 # ------------------------------------------------------------
-@app.post("/aggregate")
+@router.post("/aggregate")
 def aggregate(input: ScoresInput):
     """
     Aggregate risk scores from Agents 1, 2, and 3 into a single weighted score.
