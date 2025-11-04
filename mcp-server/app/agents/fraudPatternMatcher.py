@@ -1,6 +1,6 @@
 # agents/fraudPatternMatcher.py
 # ---------------------------------------------------------------------------
-# Agent 4: Fraud Pattern Matcher
+# Agent 3: Fraud Pattern Matcher
 #
 # Model: BERT + XGBoost
 #
@@ -19,7 +19,7 @@ import pandas as pd
 from models.metadata_text import load_metadata_text, MetadataText
 
 # Training Function
-def train_agent4():
+def train_agent3():
     """
     Loads metadata from S3/local and trains an XGBoost classifier using BERT embeddings.
     Takes into account all fields: ip_address, user_agent, merchant, product_category, metadata.
@@ -60,7 +60,7 @@ def train_agent4():
 
 
 # Evaluation Function
-def evaluate_agent4(model, tx: MetadataText):
+def evaluate_agent3(model, tx: MetadataText):
     """
     Evaluates a single transaction using the full MetadataText model.
     Combines all fields into a composite text for embedding and classification.
