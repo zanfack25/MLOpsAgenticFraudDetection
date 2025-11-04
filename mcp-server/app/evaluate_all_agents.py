@@ -26,7 +26,7 @@ os.makedirs(LOCAL_MODEL_DIR, exist_ok=True)
 # ---------------------------------------------
 
 def get_latest_model_key(agent_prefix):
-    """Retrieve the latest model file for a given agent prefix from S3."""
+    #"""Retrieve the latest model file for a given agent prefix from S3."""
     response = s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=agent_prefix)
     if "Contents" not in response:
         print(f"No models found for {agent_prefix}")
@@ -36,7 +36,7 @@ def get_latest_model_key(agent_prefix):
 
 
 def download_model(s3_key):
-    """Download model from S3 to local directory."""
+    #"""Download model from S3 to local directory."""
     local_path = os.path.join(LOCAL_MODEL_DIR, os.path.basename(s3_key))
     s3.download_file(BUCKET_NAME, s3_key, local_path)
     print(f"Downloaded model: {s3_key} → {local_path}")
@@ -44,13 +44,8 @@ def download_model(s3_key):
 
 
 def evaluate_model(agent_id, model):
-    """Run evaluation for a given agent."""
-    print(f"Evaluating Agent {agent_id}...")
-
-    # Sample test data (in real-world, pull from dataset)
-    def evaluate_model(agent_id, model):
-    """Run evaluation for a given agent using its full data model."""
-    print(f"🔍 Evaluating Agent {agent_id}...")
+    # """Run evaluation for a given agent using its full data model."""
+    print(f" Evaluating Agent {agent_id}...")
 
     # ----------------------------------------------------------------------
     # Agent 1 — Context Analyzer
@@ -119,7 +114,7 @@ def evaluate_model(agent_id, model):
 
 
 def upload_evaluation_results(results):
-    """Upload evaluation summary to S3."""
+    #"""Upload evaluation summary to S3."""
     timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     local_file = f"evaluation_results_{timestamp}.json"
     s3_key = f"evaluations/{local_file}"
