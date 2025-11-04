@@ -25,6 +25,8 @@ def train_agent1():
     df = load_device_ip_logs()
     features = df[['step','type','amount','nameOrig','oldbalanceOrg','newbalanceOrig','nameDest','oldbalanceDest','newbalanceDest','isFraud','isFlaggedFraud']]
     model = IsolationForest(random_state=42)
+    categorical_cols = features.select_dtypes(include=["object"]).columns
+    features = pd.get_dummies(features, columns=categorical_cols)
     model.fit(features)
     return model
 
