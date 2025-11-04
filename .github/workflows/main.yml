@@ -75,11 +75,11 @@ jobs:
                     resources:
                       requests:
                         cpu: "4000m"
-                        memory: "16Gi"
+                        memory: "32Gi"
                         ephemeral-storage: "60Gi"
                       limits:
                         cpu: "8000m"
-                        memory: "16Gi"
+                        memory: "64Gi"
                         ephemeral-storage: "120Gi"
                 restartPolicy: Never
           EOF
