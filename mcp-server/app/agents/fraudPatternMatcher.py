@@ -60,7 +60,7 @@ def train_agent4():
 
 
 # Evaluation Function
-def evaluate_agent(model, tx: MetadataText):
+def evaluate_agent4(model, tx: MetadataText):
     """
     Evaluates a single transaction using the full MetadataText model.
     Combines all fields into a composite text for embedding and classification.
