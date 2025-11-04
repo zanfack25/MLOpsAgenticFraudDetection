@@ -5,24 +5,21 @@
 # Uses all fields from DeviceIPLog as model input.
 # Model loaded from S3 and exposed via FastAPI.
 # ------------------------------------------------------------
-
-from fastapi import FastAPI
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from fastapi import FastAPI
 import boto3
 import joblib
 import tempfile
 import os
 import pandas as pd
 
-# ------------------------------------------------------------
-# FastAPI Initialization
-# ------------------------------------------------------------
-app = FastAPI(title="Agent 1 - Context Analyzer ")
+
+router = APIRouter()
 
 # ------------------------------------------------------------
 # Configuration
 # ------------------------------------------------------------
-
 REGION = "ca-central-1"
 BUCKET_NAME = os.getenv("MODEL_BUCKET", "dav-fraud-detection-models")
 LOCAL_MODEL_DIR = "models"
@@ -35,9 +32,8 @@ os.makedirs(LOCAL_MODEL_DIR, exist_ok=True)
 # ------------------------------------------------------------
 s3 = boto3.client("s3", region_name=REGION)
 
-
 # ------------------------------------------------------------
-# Full Data Model (All Fields)
+# Full Data Model
 # ------------------------------------------------------------
 class DeviceIPLog(BaseModel):
     step: int
@@ -52,22 +48,17 @@ class DeviceIPLog(BaseModel):
     isFraud: int
     isFlaggedFraud: int
 
-
 # ------------------------------------------------------------
-# Model Loader
-# ------------------------------------------------------------
-# ------------------------------------------------------------
-# Utility Functions (from evaluate_all_agents.py)
+# Model Loader Utilities
 # ------------------------------------------------------------
 def get_latest_model_key(agent_prefix: str):
     """Retrieve the latest model file for a given agent prefix from S3."""
     response = s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=agent_prefix)
     if "Contents" not in response:
-        print(f" No models found for prefix {agent_prefix}")
+        print(f"No models found for prefix {agent_prefix}")
         return None
     latest = sorted(response["Contents"], key=lambda x: x["LastModified"], reverse=True)[0]
     return latest["Key"]
-
 
 def download_model(s3_key: str):
     """Download model from S3 to local directory."""
@@ -76,12 +67,9 @@ def download_model(s3_key: str):
     print(f"Downloaded model: s3://{BUCKET_NAME}/{s3_key} → {local_path}")
     return local_path
 
-
-# ------------------------------------------------------------
-# Load Latest Model Automatically at Startup
-# ------------------------------------------------------------
 def load_latest_model():
-    print(" Searching for the latest model in S3...")
+    """Load the latest model from S3 at startup."""
+    print("Searching for the latest model in S3...")
     key = get_latest_model_key(AGENT_PREFIX)
     if not key:
         raise RuntimeError(f"No model found for prefix {AGENT_PREFIX}")
@@ -92,28 +80,29 @@ def load_latest_model():
     print("Model loaded successfully.")
     return model, key
 
-
+# ------------------------------------------------------------
+# Load model on startup
+# ------------------------------------------------------------
 model, model_key = load_latest_model()
 
 # ------------------------------------------------------------
-# Prediction API Endpoint
+# Prediction Endpoint
 # ------------------------------------------------------------
-@app.post("/predict")
+@router.post("/predict")
 def predict(tx: DeviceIPLog):
     """
-    Evaluate a transaction log using the full DeviceIPLog schema.
-    All numeric and encoded features are passed into the Isolation Forest model.
+    Evaluate a transaction log using the Isolation Forest model.
     """
-    df = pd.DataFrame([tx.dict()])
+    try:
+        df = pd.DataFrame([tx.dict()])
+        df = df.apply(pd.to_numeric, errors="ignore")
+        score = 1 - model.decision_function(df)[0]
 
-    # Convert all possible numeric fields and categorical encodings
-    df = df.apply(pd.to_numeric, errors="ignore")
-
-    score = 1 - model.decision_function(df)[0]
-
-    return {
-        "agent_id": 1,
-        "model_key": model_key,
-        "model_name": "IsolationForest",
-        "anomaly_score": float(score)
-    }
+        return {
+            "agent_id": 1,
+            "model_key": model_key,
+            "model_name": "IsolationForest",
+            "anomaly_score": float(score)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
