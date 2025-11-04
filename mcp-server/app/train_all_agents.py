@@ -42,7 +42,7 @@ def main():
     upload_model_to_s3(model2_path, f"agents/agent2/{os.path.basename(model2_path)}")
 
     print("Training Agent 3: Fraud Pattern Matcher...")
-    model3 = fraudPatternMatcher.train_agent4()
+    model3 = fraudPatternMatcher.train_agent3()
     model3_path = os.path.join(LOCAL_MODEL_DIR, f"agent3_{timestamp}.pkl")
     joblib.dump(model3, model3_path)
     upload_model_to_s3(model3_path, f"agents/agent3/{os.path.basename(model3_path)}")
