@@ -75,3 +75,20 @@ jobs:
                         cpu: "2000m"
                         memory: "4Gi"
           EOF
+
+          # Create a LoadBalancer service to expose the API
+          kubectl delete service fraud-detection-api-service --ignore-not-found
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: fraud-detection-api-service
+          spec:
+            type: LoadBalancer
+            selector:
+              app: fraud-api
+            ports:
+              - protocol: TCP
+                port: 80
+                targetPort: 8000
+          EOF
