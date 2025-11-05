@@ -1,6 +1,5 @@
 # app/train_all_agents.py  
 import os 
-import psutil
 import time
 import joblib
 import boto3
@@ -35,8 +34,6 @@ def main():
     model2_path = os.path.join(LOCAL_MODEL_DIR, f"agent2_{timestamp}.pkl")
     joblib.dump(model2, model2_path)
     upload_model_to_s3(model2_path, f"agents/agent2/{os.path.basename(model2_path)}")
-
-    print(f"Memory usage: {psutil.Process(os.getpid()).memory_info().rss / (1024**3):.2f} GiB")
     
     print("Agent 2 : transaction History Profiler trained and uploaded successfully.")
     time.sleep(5)  # ensure uploads complete before Pod exits
