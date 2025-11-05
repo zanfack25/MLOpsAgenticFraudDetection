@@ -1,42 +1,61 @@
 # app/train_agent3.py  
-import os 
-import time
-import joblib
-import boto3
-import traceback
-from datetime import datetime
+# Agent 4: Fraud Pattern Matcher
+#
+#     Model: BERT + XGBoost
+#
+#     Steps:
+#
+#         Embed metadata
+#
+#         Classify with XGBoost
+#
+#     Scoring: score = model.predict_proba(X)[1]
+from transformers import BertTokenizer, BertModel
+from xgboost import XGBClassifier
+import torch
+import numpy as np
+from models.metadata_text import load_metadata_text, MetadataText
 
-from agents import fraudPatternMatcher
+# Training Function
 
-# S3 configuration
-REGION = "ca-central-1"
-BUCKET_NAME = os.getenv("MODEL_BUCKET", "dav-fraud-detection-models")
-s3 = boto3.client("s3", region_name=REGION)
+def train_agent3():
+    """
+    Loads metadata from S3 and trains XGBoost classifier using BERT embeddings.
+    Returns trained model.
+    """
+    df = load_metadata_text()
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    bert = BertModel.from_pretrained('bert-base-uncased')
 
-# Local model output directory
-LOCAL_MODEL_DIR = "models"
-os.makedirs(LOCAL_MODEL_DIR, exist_ok=True)
+    embeddings = []
+    for text in df['metadata']:
+        inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True)
+        with torch.no_grad():
+            output = bert(**inputs)
+        pooled = output.last_hidden_state.mean(dim=1).squeeze().numpy()
+        embeddings.append(pooled)
 
-def upload_model_to_s3(local_path: str, s3_key: str):
-    """Uploads a model file to S3."""
-    try:
-        s3.upload_file(local_path, BUCKET_NAME, s3_key)
-        print(f" Uploaded {s3_key} to S3 bucket {BUCKET_NAME}.")
-    except Exception as e:
-        print(f" Failed to upload {local_path} to S3: {e}")
-        traceback.print_exc()
+    X = np.array(embeddings)
+    y = df['is_fraud'].map({'yes': 1, 'no': 0}).values
 
-def main():
-    timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
- 
-    print("Training Agent 3: Fraud Pattern Matcher...")
-    model3 = fraudPatternMatcher.train_agent3()
-    model3_path = os.path.join(LOCAL_MODEL_DIR, f"agent3_{timestamp}.pkl")
-    joblib.dump(model3, model3_path)
-    upload_model_to_s3(model3_path, f"agents/agent3/{os.path.basename(model3_path)}")
-    
-    print("Agent 3: Fraud Pattern Matcher trained and uploaded successfully.")
-    time.sleep(5)  # ensure uploads complete before Pod exits
+    model = XGBClassifier(use_label_encoder=False, eval_metric='logloss')
+    model.fit(X, y)
+    return model
 
-if __name__ == "__main__":
-    main()
+# Evaluation Function
+
+def evaluate_agent3(model, tx: MetadataText):
+    """
+    Evaluates a single transaction using trained XGBoost model and BERT embedding.
+    Returns fraud probability score.
+    """
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    bert = BertModel.from_pretrained('bert-base-uncased')
+
+    inputs = tokenizer(tx.metadata, return_tensors='pt', truncation=True, padding=True)
+    with torch.no_grad():
+        output = bert(**inputs)
+    pooled = output.last_hidden_state.mean(dim=1).squeeze().numpy()
+
+    score = model.predict_proba([pooled])[0][1]
+    return score
