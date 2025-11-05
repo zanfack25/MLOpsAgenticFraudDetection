@@ -1,6 +1,5 @@
 # app/train_agent3.py  
 import os 
-import psutil
 import time
 import joblib
 import boto3
@@ -35,8 +34,6 @@ def main():
     model3_path = os.path.join(LOCAL_MODEL_DIR, f"agent3_{timestamp}.pkl")
     joblib.dump(model3, model3_path)
     upload_model_to_s3(model3_path, f"agents/agent3/{os.path.basename(model3_path)}")
-    
-    print(f"Memory usage: {psutil.Process(os.getpid()).memory_info().rss / (1024**3):.2f} GiB")
     
     print("Agent 3: Fraud Pattern Matcher trained and uploaded successfully.")
     time.sleep(5)  # ensure uploads complete before Pod exits
