@@ -1,6 +1,5 @@
 # app/train_agent1.py  
 import os 
-import psutil
 import time
 import joblib
 import boto3
@@ -36,8 +35,6 @@ def main():
     joblib.dump(model1, model1_path)
     upload_model_to_s3(model1_path, f"agents/agent1/{os.path.basename(model1_path)}")
     
-    print(f"Memory usage: {psutil.Process(os.getpid()).memory_info().rss / (1024**3):.2f} GiB")
-  
     print("Agent 1 : Context Analyzer Trained successfully -->  models trained and uploaded successfully.")
     time.sleep(5)  # ensure uploads complete before Pod exits
 
