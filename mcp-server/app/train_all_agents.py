@@ -1,4 +1,4 @@
-# app/train_all_agents.py  
+# ==== app/train_all_agents.py  
 import os
 import time
 import joblib
@@ -8,7 +8,7 @@ from datetime import datetime
 
 from agents import contextAnalyzer, transactionHistoryProfiler, fraudPatternMatcher
 
-# S3 configuration
+# S3 configuration 
 REGION = "ca-central-1"
 BUCKET_NAME = os.getenv("MODEL_BUCKET", "dav-fraud-detection-models")
 s3 = boto3.client("s3", region_name=REGION)
