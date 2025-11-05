@@ -1,4 +1,4 @@
-name: Build_and_Deploy_AgentAI_Container_to_EKS 
+name: Build_and_Deploy_AgentAI_Container_to_EKS
 
 on:
   push:
@@ -41,14 +41,20 @@ jobs:
         run: |
           aws eks update-kubeconfig --region ca-central-1 --name FraudDetectionEKSCluster
 
-      - name: Deploy Job to EKS
+      - name: Deploy Agent Training Jobs to EKS
         run: |
-          kubectl delete job train-and-evaluate-agents-job --ignore-not-found
+          # Clean up any old jobs
+          kubectl delete job train-agent1-job --ignore-not-found
+          kubectl delete job train-agent2-job --ignore-not-found
+          kubectl delete job train-agent3-job --ignore-not-found
+
+          # Apply three jobs (one per agent)
           cat <<EOF | kubectl apply -f -
+          
           apiVersion: batch/v1
           kind: Job
           metadata:
-            name: train-and-evaluate-agents-job
+            name: train-agent1-job
             namespace: default
           spec:
             template:
@@ -56,7 +62,7 @@ jobs:
                 labels:
                   app: fraud-detection
               spec:
-                serviceAccountName: fraud-detection-sa 
+                serviceAccountName: fraud-detection-sa
                 containers:
                   - name: fraud-detection
                     image: ${ECR_IMAGE}
@@ -64,22 +70,98 @@ jobs:
                       - /bin/bash
                       - -c
                       - |
-                        echo "Starting training..."
-                        python train_all_agents.py
+                        echo "Starting Agent 1 training..."
+                        python train_agent1.py
                         echo "Training complete. Starting evaluation..."
-                        python evaluate_all_agents.py
-                        echo "Evaluation complete."
+                        python evaluate_agent1.py
+                        echo "Agent 1 Evaluation complete."
                     env:
                       - name: MODEL_BUCKET
                         value: dav-fraud-detection-models
                     resources:
                       requests:
-                        cpu: "8000m"
-                        memory: "120Gi"
+                        cpu: "4000m"
+                        memory: "30Gi"
                         ephemeral-storage: "120Gi"
                       limits:
-                        cpu: "8000m"
-                        memory: "240Gi"
+                        cpu: "4000m"
+                        memory: "30Gi"
+                        ephemeral-storage: "120Gi"
+                restartPolicy: Never
+          
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: train-agent2-job
+            namespace: default
+          spec:
+            template:
+              metadata:
+                labels:
+                  app: fraud-detection
+              spec:
+                serviceAccountName: fraud-detection-sa
+                containers:
+                  - name: fraud-detection
+                    image: ${ECR_IMAGE}
+                    command:
+                      - /bin/bash
+                      - -c
+                      - |
+                        echo "Starting Agent 2 training..."
+                        python train_agent2.py
+                        echo "Training complete. Starting evaluation..."
+                        python evaluate_agent2.py
+                        echo "Agent 2 Evaluation complete."
+                    env:
+                      - name: MODEL_BUCKET
+                        value: dav-fraud-detection-models
+                    resources:
+                      requests:
+                        cpu: "4000m"
+                        memory: "30Gi"
+                        ephemeral-storage: "120Gi"
+                      limits:
+                        cpu: "4000m"
+                        memory: "30Gi"
+                        ephemeral-storage: "120Gi"
+                restartPolicy: Never
+          
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: train-agent3-job
+            namespace: default
+          spec:
+            template:
+              metadata:
+                labels:
+                  app: fraud-detection
+              spec:
+                serviceAccountName: fraud-detection-sa
+                containers:
+                  - name: fraud-detection
+                    image: ${ECR_IMAGE}
+                    command:
+                      - /bin/bash
+                      - -c
+                      - |
+                        echo "Starting Agent 3 training..."
+                        python train_agent3.py
+                        echo "Training complete. Starting evaluation..."
+                        python evaluate_agent3.py
+                        echo "Agent 3 Evaluation complete."
+                    env:
+                      - name: MODEL_BUCKET
+                        value: dav-fraud-detection-models
+                    resources:
+                      requests:
+                        cpu: "4000m"
+                        memory: "30Gi"
+                        ephemeral-storage: "120Gi"
+                      limits:
+                        cpu: "4000m"
+                        memory: "30Gi"
                         ephemeral-storage: "120Gi"
                 restartPolicy: Never
           EOF
