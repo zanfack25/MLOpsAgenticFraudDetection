@@ -48,7 +48,7 @@ jobs:
           apiVersion: batch/v1
           kind: Job
           metadata:
-            name: train-all-AI-agents-job
+            name: train-all-ai-agents-job
             namespace: default
           spec:
             template:
