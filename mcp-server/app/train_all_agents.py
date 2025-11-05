@@ -1,6 +1,5 @@
 # app/train_all_agents.py  
-import os 
-import psutil
+import os
 import time
 import joblib
 import boto3
@@ -35,8 +34,6 @@ def main():
     model1_path = os.path.join(LOCAL_MODEL_DIR, f"agent1_{timestamp}.pkl")
     joblib.dump(model1, model1_path)
     upload_model_to_s3(model1_path, f"agents/agent1/{os.path.basename(model1_path)}")
-    
-    print(f"Memory usage: {psutil.Process(os.getpid()).memory_info().rss / (1024**3):.2f} GiB")
 
     print(" Training Agent 2: Transaction History Profiler...")
     model2 = transactionHistoryProfiler.train_agent2()
@@ -44,16 +41,12 @@ def main():
     joblib.dump(model2, model2_path)
     upload_model_to_s3(model2_path, f"agents/agent2/{os.path.basename(model2_path)}")
 
-    print(f"Memory usage: {psutil.Process(os.getpid()).memory_info().rss / (1024**3):.2f} GiB")
-    
     print("Training Agent 3: Fraud Pattern Matcher...")
     model3 = fraudPatternMatcher.train_agent3()
     model3_path = os.path.join(LOCAL_MODEL_DIR, f"agent3_{timestamp}.pkl")
     joblib.dump(model3, model3_path)
     upload_model_to_s3(model3_path, f"agents/agent3/{os.path.basename(model3_path)}")
-    
-    print(f"Memory usage: {psutil.Process(os.getpid()).memory_info().rss / (1024**3):.2f} GiB")
-    
+
     print("All models trained and uploaded successfully.")
     time.sleep(5)  # ensure uploads complete before Pod exits
 
