@@ -50,7 +50,6 @@ jobs:
 
           # Apply three jobs (one per agent)
           cat <<EOF | kubectl apply -f -
-          ---
           apiVersion: batch/v1
           kind: Job
           metadata:
