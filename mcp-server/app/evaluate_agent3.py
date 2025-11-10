@@ -73,7 +73,7 @@ def upload_evaluation_results(results):
     #"""Upload evaluation summary to S3."""
     timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     local_file = f"evaluation_results_{timestamp}.json"
-    s3_key = f"evaluations/{local_file}"
+    s3_key = f"evaluations/agent3/{local_file}"
 
     with open(local_file, "w") as f:
         json.dump(results, f, indent=4)

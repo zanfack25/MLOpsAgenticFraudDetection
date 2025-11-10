@@ -1,0 +1,85 @@
+name: Build_and_Deploy_Agent_3_Fraud_Pattern_Matcher_AI_Container_to_EKS
+
+on:
+  push:
+    branches: [main]
+
+env:
+  MODEL_BUCKET: dav-fraud-detection-models
+  AWS_REGION: ca-central-1
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: fraud-detection-ecr-registry/agent3
+          IMAGE_TAG: latest
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "ECR_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Update kubeconfig to connect to EKS
+        run: |
+          aws eks update-kubeconfig --region ca-central-1 --name FraudDetectionEKSCluster
+
+      - name: Deploy_Agent_3_Training_Jobs_to_EKS
+        run: |
+          # deploy and Train Agent
+          cat <<EOF | kubectl apply -f -
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: train-ai-agent3-job
+            namespace: default
+          spec:
+            template:
+              metadata:
+                labels:
+                  app: fraud-detection
+              spec:
+                serviceAccountName: fraud-detection-sa
+                containers:
+                  - name: fraud-detection
+                    image: ${ECR_IMAGE}
+                    command:
+                      - /bin/bash
+                      - -c
+                      - |
+                        echo "Starting AI Agent 3 training :  Fraud Pattern Matcher ..."
+                        python train_agent3.py
+                        echo "Training complete. Starting AI Agent 3 evaluation :  Fraud Pattern Matcher..."
+                        python evaluate_agent3.py
+                        echo "AI Agent Evaluation completed.   Fraud Pattern Matcher"
+                    env:
+                      - name: MODEL_BUCKET
+                        value: dav-fraud-detection-models
+                    resources:
+                      requests:
+                        cpu: "4000m"
+                        memory: "30Gi"
+                        ephemeral-storage: "120Gi"
+                      limits:
+                        cpu: "4000m"
+                        memory: "30Gi"
+                        ephemeral-storage: "120Gi"
+                restartPolicy: Never
+          EOF
