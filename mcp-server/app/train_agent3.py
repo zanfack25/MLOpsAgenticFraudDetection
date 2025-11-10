@@ -15,7 +15,7 @@ from xgboost import XGBClassifier
 import torch
 import numpy as np
 from models.metadata_text import load_metadata_text, MetadataText
-from aagents import fraudPatternMatcher
+from agents import fraudPatternMatcher
 
 # Training Function
 
@@ -43,7 +43,7 @@ def main():
     print(" Training Agent 3: Fraud Pattern Matcher...")
     model3 = fraudPatternMatcher.train_agent3()
     model3_path = os.path.join(LOCAL_MODEL_DIR, f"agent3_{timestamp}.pkl")
-    joblib.dump(model2, model3_path)
+    joblib.dump(model3, model3_path)
     upload_model_to_s3(model3_path, f"agents/agent3/{os.path.basename(model3_path)}")
     
     print("Agent 3 : Fraud Pattern Matcher trained and uploaded successfully.")

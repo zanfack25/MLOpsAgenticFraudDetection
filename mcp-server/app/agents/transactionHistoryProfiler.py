@@ -104,18 +104,30 @@ def evaluate_agent2(model_bundle, tx: TransactionHistory, threshold: float = 10.
     pipeline = model_bundle["cluster_pipeline"]
 
     # Forecast order price expectation
+    
     future = pd.DataFrame({'ds': [pd.to_datetime(tx.event_timestamp).tz_localize(None)]})
     forecast = prophet_model.predict(future)
     predicted = forecast['yhat'][0]
     deviation = abs(tx.order_price - predicted)
 
     # Compute cluster distance
-    tx_df = pd.DataFrame([tx.dict()])
+    # Convert single transaction to a DataFrame
+    tx_df = pd.DataFrame([tx.dict()]) 
+   # tx_df = pd.DataFrame([tx.dict()])
     tx_df = tx_df.fillna('missing')
-    X_tx = tx_df[pipeline.named_steps['preprocessor'].get_feature_names_out()]
+    # Transform features using the preprocessor
+
+# X_tx = tx_df[pipeline.named_steps['preprocessor'].get_feature_names_out()]
+
+    X_tx = pipeline.named_steps['preprocessor'].transform(tx_df)
+
+    # Compute cluster label and distance
     cluster_label = pipeline.named_steps['cluster'].predict(X_tx)[0]
     cluster_center = pipeline.named_steps['cluster'].cluster_centers_[cluster_label]
-    distance = np.linalg.norm(X_tx.values[0] - cluster_center)
+
+# distance = np.linalg.norm(X_tx.values[0] - cluster_center)
+
+    distance = np.linalg.norm(X_tx[0] - cluster_center)
 
     # Combine both anomaly indicators
     deviation_score = np.tanh(deviation / threshold)  # normalize deviation

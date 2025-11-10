@@ -86,12 +86,12 @@ jobs:
                         value: dav-fraud-detection-models
                     resources:
                       requests:
-                        cpu: "2000m"
-                        memory: "8Gi"
-                        ephemeral-storage: "30Gi"
-                      limits:
-                        cpu: "3000m"
+                        cpu: "4000m"
                         memory: "16Gi"
+                        ephemeral-storage: "90Gi"
+                      limits:
+                        cpu: "4000m"
+                        memory: "32Gi"
                         ephemeral-storage: "120Gi"
                 restartPolicy: Never
           EOF
