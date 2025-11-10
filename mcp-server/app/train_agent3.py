@@ -13,6 +13,7 @@
 from transformers import BertTokenizer, BertModel
 from xgboost import XGBClassifier
 import torch
+import os
 import numpy as np
 from models.metadata_text import load_metadata_text, MetadataText
 from agents import fraudPatternMatcher

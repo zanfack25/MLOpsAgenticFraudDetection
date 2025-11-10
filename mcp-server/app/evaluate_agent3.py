@@ -106,7 +106,12 @@ def main():
 
         score = evaluate_model(agent_id, model)
         if score is not None:
-            results[f"agent_{agent_id}"] = {"score": score, "model_key": key}
+           # results[f"agent_{agent_id}"] = {"score": score, "model_key": key}
+           results[f"agent_{agent_id}"] = {
+                "score": float(score),
+                "model_key": key
+            }
+
 
     if results:
         upload_evaluation_results(results)
