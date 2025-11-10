@@ -54,7 +54,7 @@ jobs:
       - name: Deploy_Agent_1_Training_Jobs_to_EKS
         run: |
           # deploy and Train Agent
-          cat <<EOF | kubectl apply -f -
+          cat <<EOF | kubectl create -f -
           apiVersion: batch/v1
           kind: Job
           metadata:
