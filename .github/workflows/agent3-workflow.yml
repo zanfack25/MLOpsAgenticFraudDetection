@@ -1,11 +1,14 @@
 name: Build_and_Deploy_Agent_3_Fraud_Pattern_Matcher_AI_Container_to_EKS
 
 on:
+  push:
+    branches: [main]
   workflow_call:
     inputs:
       image_tag:
         required: true
         type: string
+
 
 env:
   MODEL_BUCKET: dav-fraud-detection-models
