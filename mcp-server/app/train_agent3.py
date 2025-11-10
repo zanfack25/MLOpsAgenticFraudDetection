@@ -10,11 +10,21 @@
 #         Classify with XGBoost
 #
 #     Scoring: score = model.predict_proba(X)[1]
+
+
+import os
+import boto3
+import joblib
+import pandas as pd
+import numpy as np
+import time
+import traceback
+from datetime import datetime
+
+
 from transformers import BertTokenizer, BertModel
 from xgboost import XGBClassifier
 import torch
-import os
-import numpy as np
 from models.metadata_text import load_metadata_text, MetadataText
 from agents import fraudPatternMatcher
 
@@ -37,6 +47,18 @@ def upload_model_to_s3(local_path: str, s3_key: str):
     except Exception as e:
         print(f" Failed to upload {local_path} to S3: {e}")
         traceback.print_exc()
+
+def main():
+    timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+
+    print(" Training Agent 3: Fraud Pattern Matcher...")
+    model3 = fraudPatternMatcher.train_agent3()
+    model3_path = os.path.join(LOCAL_MODEL_DIR, f"agent3_{timestamp}.pkl")
+    joblib.dump(model3, model3_path)
+    upload_model_to_s3(model3_path, f"agents/agent3/{os.path.basename(model3_path)}")
+    
+    print("Agent 3 : Fraud Pattern Matcher trained and uploaded successfully.")
+    time.sleep(5)  # ensure uploads complete before Pod exits
 
 def main():
     timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
