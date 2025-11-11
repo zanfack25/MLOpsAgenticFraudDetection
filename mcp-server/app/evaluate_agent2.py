@@ -44,41 +44,35 @@ def download_model(s3_key):
 
 def evaluate_model(agent_id, model):
     # """Run evaluation for a given agent using its full data model."""
-    print(f" Evaluating Agent {agent_id}...")
-
+    print("Evaluating Agent 2...")
     
 
     # ----------------------------------------------------------------------
     # Agent 2 — Transaction History Profiler (Full Features)
     # ----------------------------------------------------------------------
-    if agent_id == 2:
-        sample_tx = TransactionHistory(
-            event_timestamp="2025-10-21T12:00:00Z",
-            event_id="evt-123",
-            entity_type="card",
-            entity_id="ent-789",
-            card_bin=543210,
-            customer_name="John Doe",
-            billing_city="Toronto",
-            billing_state="ON",
-            billing_zip="M5H 2N2",
-            billing_latitude=43.6532,
-            billing_longitude=-79.3832,
-            ip_address="192.168.1.10",
-            product_category="Electronics",
-            order_price=899.99,
-            merchant="Amazon",
-            is_fraud="no"
-        )
+    sample_tx = TransactionHistory(
+        event_timestamp="2025-10-21T12:00:00Z",
+        event_id="evt-123",
+        entity_type="card",
+        entity_id="ent-789",
+        card_bin=543210,
+        customer_name="John Doe",
+        billing_city="Toronto",
+        billing_state="ON",
+        billing_zip="M5H 2N2",
+        billing_latitude=43.6532,
+        billing_longitude=-79.3832,
+        ip_address="192.168.1.10",
+        product_category="Electronics",
+        order_price=899.99,
+        merchant="Amazon",
+        is_fraud="no"
+    )    
 
-        # New full-feature evaluator
-        score = transactionHistoryProfiler.evaluate_agent2(model, sample_tx)
+    # New full-feature evaluator
+    score = transactionHistoryProfiler.evaluate_agent2(model, sample_tx)
       
-    else:
-        print(f"Unknown agent ID: {agent_id}")
-        return None
-
-    print(f"Agent {agent_id} evaluation score: {score}")
+    print(f"Agent 2 evaluation score: {score}")
     return score
 
 
@@ -98,34 +92,25 @@ def upload_evaluation_results(results):
 # ---------------------------------------------
 # Main entrypoint
 # ---------------------------------------------
-
 def main():
-    results = {}
-    agent_ids = [2]
+    prefix = "agents/agent2/"
+    key = get_latest_model_key(prefix)
+    if not key:
+        print("No model found for Agent 2.")
+        return
 
-    for agent_id in agent_ids:
-        prefix = f"agents/agent{agent_id}/"
-        key = get_latest_model_key(prefix)
-        if not key:
-            continue
+    local_model_path = download_model(key)
 
-        local_model_path = download_model(key)
+    try:
+        model = joblib.load(local_model_path)
+    except Exception as e:
+        print(f"Failed to load model for Agent 2: {e}")
+        return
 
-        try:
-            model = joblib.load(local_model_path)
-        except Exception as e:
-            print(f"Failed to load model for agent {agent_id}: {e}")
-            continue
-
-        score = evaluate_model(agent_id, model)
-        if score is not None:
-            results[f"agent_{agent_id}"] = {"score": score, "model_key": key}
-
-    if results:
+    score = evaluate_agent2_model(model)
+    if score is not None:
+        results = {"agent_2": {"score": float(score), "model_key": key}}
         upload_evaluation_results(results)
-    else:
-        print("No evaluations were completed successfully.")
-
 
 if __name__ == "__main__":
     main()

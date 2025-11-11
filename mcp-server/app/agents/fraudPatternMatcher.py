@@ -1,62 +1,51 @@
-# agents/fraudPatternMatcher.py
-# ---------------------------------------------------------------------------
-# Agent 3: Fraud Pattern Matcher
-#
-# Model: BERT + XGBoost
-#
-# Steps:
-#     1. Combine all metadata fields into a composite text
-#     2. Encode with BERT embeddings (batched)
-#     3. Train an XGBoost classifier
-#     4. Use probability of fraud as the score
-# ---------------------------------------------------------------------------
-#     Scoring: score = model.predict_proba(X)[1]
-from transformers import BertTokenizer, BertModel
-from xgboost import XGBClassifier
-import torch
-import numpy as np
-from models.metadata_text import load_metadata_text, MetadataText
 
 # Training Function
+# agents/fraudPatternMatcher.py
+# ---------------------------------------------------------------------------
+# Agent 3: Fraud Pattern Matcher (Simplified)
+#
+# Model: TF-IDF + Logistic Regression
+# Steps:
+#     1. Vectorize metadata text using TF-IDF
+#     2. Train a Logistic Regression classifier
+#     3. Use probability of fraud as the score
+# ---------------------------------------------------------------------------
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+import numpy as np
+from models.metadata_text import load_metadata_text, MetadataText
+import joblib
 
 def train_agent3():
     """
-    Loads metadata from S3 and trains XGBoost classifier using BERT embeddings.
-    Returns trained model.
+    Loads metadata and trains a Logistic Regression classifier using TF-IDF.
+    Returns trained model pipeline.
     """
     df = load_metadata_text()
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    bert = BertModel.from_pretrained('bert-base-uncased')
-
-    embeddings = []
-    for text in df['metadata']:
-        inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True)
-        with torch.no_grad():
-            output = bert(**inputs)
-        pooled = output.last_hidden_state.mean(dim=1).squeeze().numpy()
-        embeddings.append(pooled)
-
-    X = np.array(embeddings)
+    
+    # Labels
     y = df['is_fraud'].map({'yes': 1, 'no': 0}).values
-
-    model = XGBClassifier(use_label_encoder=False, eval_metric='logloss')
+    
+    # TF-IDF vectorizer
+    vectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1,2))
+    X = vectorizer.fit_transform(df['metadata'])
+    
+    # Logistic Regression classifier
+    model = LogisticRegression(max_iter=500)
     model.fit(X, y)
-    return model
+    
+    # Return a simple dict with vectorizer + model
+    return {'vectorizer': vectorizer, 'model': model}
 
-# Evaluation Function
-
-def evaluate_agent3(model, tx: MetadataText):
+def evaluate_agent3(agent_model, tx: MetadataText):
     """
-    Evaluates a single transaction using trained XGBoost model and BERT embedding.
+    Evaluates a single transaction using TF-IDF + Logistic Regression.
     Returns fraud probability score.
     """
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    bert = BertModel.from_pretrained('bert-base-uncased')
-
-    inputs = tokenizer(tx.metadata, return_tensors='pt', truncation=True, padding=True)
-    with torch.no_grad():
-        output = bert(**inputs)
-    pooled = output.last_hidden_state.mean(dim=1).squeeze().numpy()
-
-    score = model.predict_proba([pooled])[0][1]
+    vectorizer = agent_model['vectorizer']
+    model = agent_model['model']
+    
+    X_tx = vectorizer.transform([tx.metadata])
+    score = model.predict_proba(X_tx)[0][1]
     return score

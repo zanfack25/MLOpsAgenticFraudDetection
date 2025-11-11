@@ -11,37 +11,55 @@
 #         Score new input
 #
 #     Scoring: score = 1 - model.decision_function(X)
-from sklearn.ensemble import IsolationForest
-from models.device_ip_logs import load_device_ip_logs, DeviceIPLog
-import pandas as pd
+# agents/transactionAnomalyDetector.py
+# ---------------------------------------------------------------------------
+# Agent 1: Initiation Context Analyzer
+#
+# Model: Random Forest Classifier (simpler, supervised)
+#
+# Steps:
+#     1. Load device/IP logs
+#     2. Preprocess categorical features
+#     3. Train Random Forest on labeled fraud
+#     4. Use probability of fraud as score
+# ---------------------------------------------------------------------------
 
-# Training Function
+from sklearn.ensemble import RandomForestClassifier
+import pandas as pd
+from models.device_ip_logs import load_device_ip_logs, DeviceIPLog
 
 def train_agent1():
     """
-    Loads Cyfer dataset from S3 and trains Isolation Forest model.
+    Loads device/IP logs and trains a Random Forest classifier for fraud detection.
     Returns trained model.
     """
     df = load_device_ip_logs()
-    features = df[['step','type','amount','nameOrig','oldbalanceOrg','newbalanceOrig','nameDest','oldbalanceDest','newbalanceDest','isFraud','isFlaggedFraud']]
+    
+    # Features for training
+    features = df[['step','type','amount','nameOrig','oldbalanceOrg','newbalanceOrig',
+                   'nameDest','oldbalanceDest','newbalanceDest']]
+    
     # One-hot encode categorical features
     categorical_cols = features.select_dtypes(include=["object"]).columns
     features = pd.get_dummies(features, columns=categorical_cols)
-
-    model = IsolationForest(random_state=42)
-    model.fit(features)
-    # Save column structure for consistent evaluation
+    
+    # Target
+    y = df['isFraud'].values
+    
+    # Train Random Forest
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(features, y)
+    
+    # Save column structure for evaluation
     model.feature_names_in_ = features.columns.tolist()
     return model
 
-# Evaluation Function
-
 def evaluate_agent1(model, tx: DeviceIPLog):
     """
-    Evaluates a single transaction using trained Isolation Forest model.
-    Returns anomaly score.
+    Evaluates a single transaction using trained Random Forest model.
+    Returns fraud probability score.
     """
-    # Convert the single transaction into a DataFrame
+    # Convert transaction to DataFrame
     df = pd.DataFrame([{
         "step": tx.step,
         "type": tx.type,
@@ -51,12 +69,10 @@ def evaluate_agent1(model, tx: DeviceIPLog):
         "newbalanceOrig": tx.newbalanceOrig,
         "nameDest": tx.nameDest,
         "oldbalanceDest": tx.oldbalanceDest,
-        "newbalanceDest": tx.newbalanceDest,
-        "isFraud": tx.isFraud,
-        "isFlaggedFraud": tx.isFlaggedFraud
+        "newbalanceDest": tx.newbalanceDest
     }])
     
-    # One-hot encode same categorical features
+    # One-hot encode categorical features
     df_encoded = pd.get_dummies(df)
     
     # Align columns with training features
@@ -65,6 +81,6 @@ def evaluate_agent1(model, tx: DeviceIPLog):
             df_encoded[col] = 0
     df_encoded = df_encoded[model.feature_names_in_]
     
-    # Compute anomaly score
-    score = 1 - model.decision_function(df_encoded)[0]
+    # Compute probability of fraud
+    score = model.predict_proba(df_encoded)[0][1]
     return float(score)

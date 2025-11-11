@@ -26,18 +26,29 @@ def upload_model_to_s3(local_path: str, s3_key: str):
         print(f" Failed to upload {local_path} to S3: {e}")
         traceback.print_exc()
 
+# -----------------------------
+# Main Training
+# -----------------------------
 def main():
-   
     timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
 
-    print(" Training Agent 1: Context Analyzer...")
+    print(" Training Agent 1: Context Analyzer (Random Forest)...")
+    
+    # Train model
     model1 = contextAnalyzer.train_agent1()
+    
+    # Save locally
     model1_path = os.path.join(LOCAL_MODEL_DIR, f"agent1_{timestamp}.pkl")
     joblib.dump(model1, model1_path)
-    upload_model_to_s3(model1_path, f"agents/agent1/{os.path.basename(model1_path)}")
     
-    print("Agent 1 : Context Analyzer Trained successfully -->  models trained and uploaded successfully.")
-    time.sleep(5)  # ensure uploads complete before Pod exits
+    # Upload to S3
+    s3_key = f"agents/agent1/{os.path.basename(model1_path)}"
+    upload_model_to_s3(model1_path, s3_key)
+    
+    print(f"Agent 1: Context Analyzer trained and uploaded successfully as {s3_key}.")
+    
+    # Give S3 some time to finalize uploads
+    time.sleep(5)
 
 if __name__ == "__main__":
     main()

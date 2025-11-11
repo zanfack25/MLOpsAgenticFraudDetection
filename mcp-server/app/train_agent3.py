@@ -21,10 +21,6 @@ import time
 import traceback
 from datetime import datetime
 
-
-from transformers import BertTokenizer, BertModel
-from xgboost import XGBClassifier
-import torch
 from models.metadata_text import load_metadata_text, MetadataText
 from agents import fraudPatternMatcher
 
@@ -52,23 +48,17 @@ def main():
     timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
 
     print(" Training Agent 3: Fraud Pattern Matcher...")
+
+    # Train Agent 3 
     model3 = fraudPatternMatcher.train_agent3()
+    
+    # saved localy to S3 bucket
     model3_path = os.path.join(LOCAL_MODEL_DIR, f"agent3_{timestamp}.pkl")
     joblib.dump(model3, model3_path)
-    upload_model_to_s3(model3_path, f"agents/agent3/{os.path.basename(model3_path)}")
-    
-    print("Agent 3 : Fraud Pattern Matcher trained and uploaded successfully.")
-    time.sleep(5)  # ensure uploads complete before Pod exits
-
-def main():
-    timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-
-    print(" Training Agent 3: Fraud Pattern Matcher...")
-    model3 = fraudPatternMatcher.train_agent3()
-    model3_path = os.path.join(LOCAL_MODEL_DIR, f"agent3_{timestamp}.pkl")
-    joblib.dump(model3, model3_path)
-    upload_model_to_s3(model3_path, f"agents/agent3/{os.path.basename(model3_path)}")
-    
+    print(f" Model saved locally at {model3_path}")
+    # Upload to S3 bucket
+    s3_key = f"agents/agent3/{os.path.basename(model3_path)}"
+    upload_model_to_s3(model3_path, s3_key)
     print("Agent 3 : Fraud Pattern Matcher trained and uploaded successfully.")
     time.sleep(5)  # ensure uploads complete before Pod exits
 
