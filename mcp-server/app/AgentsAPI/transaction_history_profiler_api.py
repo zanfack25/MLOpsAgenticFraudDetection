@@ -73,7 +73,7 @@ def load_latest_model():
     print("Searching for the latest model in S3...")
     key = get_latest_model_key(AGENT_PREFIX)
     if not key:
-        raise RuntimeError(f"No model found for prefix {AGENT_PREFIX}")
+        raise RuntimeError(f"No Agent 2 model found in S3")
 
     local_path = download_model(key)
     print(f"Loading model from {local_path}")
@@ -106,4 +106,28 @@ def predict(tx: TransactionHistory):
 
         # Load model components
         prophet_model = model_bundle.get("prophet")
-        clust
+        kmeans = model_bundle.get("kmeans")
+        scaler = model_bundle.get("scaler")
+
+        if scaler is not None:
+            X = scaler.transform(df.select_dtypes(include=[np.number]))
+        else:
+            X = df.select_dtypes(include=[np.number]).to_numpy()
+
+        if kmeans is not None:
+            cluster_id = kmeans.predict(X)[0]
+            # Example: high-risk clusters get higher pattern score
+            distances = kmeans.transform(X)
+            dist_score = float(np.min(distances))
+            pattern_score = np.exp(-dist_score)
+        else:
+            pattern_score = 0.5  # fallback neutral
+
+        return {
+            "agent_id": 2,
+            "model_key": model_key,
+            "model_name": "TransactionHistoryProfiler",
+            "pattern_score": float(pattern_score),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

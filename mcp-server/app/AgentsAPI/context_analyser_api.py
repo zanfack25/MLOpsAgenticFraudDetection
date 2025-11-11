@@ -33,7 +33,7 @@ os.makedirs(LOCAL_MODEL_DIR, exist_ok=True)
 s3 = boto3.client("s3", region_name=REGION)
 
 # ------------------------------------------------------------
-# Full Data Model
+# Input Schema Data Model
 # ------------------------------------------------------------
 class DeviceIPLog(BaseModel):
     step: int
@@ -95,14 +95,22 @@ def predict(tx: DeviceIPLog):
     """
     try:
         df = pd.DataFrame([tx.dict()])
-        df = df.apply(pd.to_numeric, errors="ignore")
-        score = 1 - model.decision_function(df)[0]
+        df_encoded = pd.get_dummies(df)
 
+        # Add missing columns in batch
+        missing_cols = [c for c in model.feature_names_in_ if c not in df_encoded.columns]
+        if missing_cols:
+            df_encoded = pd.concat(
+                [df_encoded, pd.DataFrame(0, index=df_encoded.index, columns=missing_cols)], axis=1
+            )
+        df_encoded = df_encoded[model.feature_names_in_]
+
+        score = model.predict_proba(df_encoded)[0][1]
         return {
             "agent_id": 1,
             "model_key": model_key,
-            "model_name": "IsolationForest",
-            "anomaly_score": float(score)
+            "model_name": "RandomForestClassifier",
+            "anomaly_score": float(score),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -66,7 +66,7 @@ def load_latest_model():
     print("Searching for the latest model in S3...")
     key = get_latest_model_key(AGENT_PREFIX)
     if not key:
-        raise RuntimeError(f"No model found for prefix {AGENT_PREFIX}")
+        raise RuntimeError(f"No model found for Agent 3.")
 
     local_path = download_model(key)
     print(f"Loading model from {local_path}")
@@ -97,21 +97,16 @@ def predict(tx: MetadataText):
         inputs = tokenizer(tx.metadata, return_tensors="pt", truncation=True, padding=True)
         with torch.no_grad():
             output = bert_model(**inputs)
-        text_embedding = output.last_hidden_state.mean(dim=1).squeeze().numpy()
+        text_embedding = output.last_hidden_state.mean(dim=1).numpy().flatten()
 
-        # Step 2: Encode structured features
-        structured_features = df.drop(columns=["metadata"], errors="ignore")
-        structured_array = pd.get_dummies(structured_features).to_numpy(dtype=float)
+        structured = pd.get_dummies(df.drop(columns=["metadata"], errors="ignore")).to_numpy()
+        vector = np.concatenate([text_embedding, structured.flatten()])
 
-        # Step 3: Combine embeddings + structured features
-        combined_vector = np.concatenate([text_embedding, structured_array.flatten()])
-
-        # Step 4: Predict fraud probability
-        model = model_bundle.get("xgb_model", model_bundle)
+        model = model_bundle.get("model", model_bundle)
         score = (
-            float(model.predict_proba([combined_vector])[0][1])
+            float(model.predict_proba([vector])[0][1])
             if hasattr(model, "predict_proba")
-            else float(model.predict([combined_vector])[0])
+            else float(model.predict([vector])[0])
         )
 
         return {

@@ -2,7 +2,7 @@
 # Dockerfile for FastAPI-based Agents API
 # ==========================================
 
-# Use a lightweight Python image
+# Use a lightweight Python Base image
 #==========================================
 FROM python:3.11-slim
 
@@ -32,17 +32,25 @@ RUN python -m pip install --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 # -----------------------------
+# Create directories used by agents
+# -----------------------------
+RUN mkdir -p /app/AgentsAPI/models
+# -----------------------------
 # Copy API source code
 # -----------------------------
 COPY mcp-server/app/AgentsAPI/ ./AgentsAPI/
+COPY mcp-server/app/models/ ./AgentsAPI/models
 
 # -----------------------------
 # Set environment variables
 # -----------------------------
 # Force Python output to be unbuffered (useful for logging)
-ENV PYTHONUNBUFFERED=1
 # Set default log level
-ENV UVICORN_LOG_LEVEL=info
+ENV PYTHONUNBUFFERED=1 \
+    UVICORN_LOG_LEVEL=info \
+    MODEL_BUCKET=dav-fraud-detection-models \
+    REGION=ca-central-1 \
+    AWS_DEFAULT_REGION=ca-central-1
 
 # -----------------------------
 # Expose FastAPI port
@@ -52,4 +60,5 @@ EXPOSE 8000
 # -----------------------------
 # Default command (production)
 # -----------------------------
-CMD ["uvicorn", "AgentsAPI.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--reload"]
+# Uvicorn’s reload watcher can break in Docker containers in production mode.
+CMD ["uvicorn", "AgentsAPI.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

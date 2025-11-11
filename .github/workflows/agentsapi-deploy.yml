@@ -12,7 +12,7 @@ on:
 env:
   AWS_REGION: ca-central-1
   ECR_REGISTRY: 111376855663.dkr.ecr.ca-central-1.amazonaws.com
-  ECR_REPOSITORY: fraud-detection-agentsapi
+  ECR_REPOSITORY: fraud-detection-ecr-registry/agents-api
   IMAGE_TAG: latest
   SERVICE_ACCOUNT: fraud-detection-sa
 
@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -38,8 +38,8 @@ jobs:
 
       - name: Build Agents API Image
         run: |
-          docker build -f mcp-server/app/AgentsAPI/Dockerfile -t fraud-detection-agentsapi .
-          docker tag fraud-detection-agentsapi:latest $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker build -f mcp-server/app/AgentsAPI/Dockerfile -t fraud-detection-ecr-registry/agents-api .
+          docker tag fraud-detection-ecr-registry/agents-api:latest $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: Push Agents API Image to ECR
         run: docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
@@ -86,6 +86,7 @@ jobs:
           EOF
 
           # Create a LoadBalancer service to expose the API
+          echo "Creating LoadBalancer Service..."
           kubectl delete service fraud-detection-api-service --ignore-not-found
           cat <<EOF | kubectl apply -f -
           apiVersion: v1
@@ -101,3 +102,4 @@ jobs:
                 port: 80
                 targetPort: 8000
           EOF
+          echo "Deployment applied successfully."

@@ -15,16 +15,14 @@ router = APIRouter(title="Fraud Detection Orchestrator")
 # ------------------------------------------------------------
 # Agent & Aggregator Endpoints (Configurable via Env)
 # ------------------------------------------------------------
-AGENT1_URL = os.getenv("AGENT1_URL", "http://localhost:8001/predict")
-AGENT2_URL = os.getenv("AGENT2_URL", "http://localhost:8002/predict")
-AGENT3_URL = os.getenv("AGENT3_URL", "http://localhost:8003/predict")
-AGGREGATOR_URL = os.getenv("AGGREGATOR_URL", "http://localhost:8004/aggregate")
 
-# ------------------------------------------------------------
-# Unified Input Model
-# ------------------------------------------------------------
+AGENT1_URL = os.getenv("AGENT1_URL", "http://localhost:8001/context-analyser/predict")
+AGENT2_URL = os.getenv("AGENT2_URL", "http://localhost:8002/transaction-history/predict")
+AGENT3_URL = os.getenv("AGENT3_URL", "http://localhost:8003/fraud-matcher/predict")
+AGGREGATOR_URL = os.getenv("AGGREGATOR_URL", "http://localhost:8004/aggregator/aggregate")
+
 class FraudInput(BaseModel):
-    # Agent 1 fields
+    # all shared fields (see your version)
     step: int
     type: str
     amount: float
@@ -36,8 +34,6 @@ class FraudInput(BaseModel):
     newbalanceDest: float
     isFraud: int
     isFlaggedFraud: int
-
-    # Agent 2 fields
     event_timestamp: str
     event_id: str
     entity_type: str
@@ -54,68 +50,35 @@ class FraudInput(BaseModel):
     order_price: float
     merchant: str
     is_fraud: str
-
-    # Agent 3 fields
     user_agent: str
     metadata: str
 
-# ------------------------------------------------------------
-# Helper Functions
-# ------------------------------------------------------------
-def call_agent(url: str, payload: Dict[str, Any], score_key: str, timeout: int = 20) -> float:
-    """Call an agent endpoint and extract the expected score."""
+def call_agent(url: str, payload: Dict[str, Any], key: str) -> float:
     try:
-        resp = requests.post(url, json=payload, timeout=timeout)
-        resp.raise_for_status()
-        score = resp.json().get(score_key)
-        if score is None:
-            raise ValueError(f"Missing expected key '{score_key}' in response from {url}")
-        return float(score)
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"Error contacting agent at {url}: {e}")
-    except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-def call_aggregator(scores: List[float]) -> Dict[str, Any]:
-    """Call aggregator service to compute final risk score."""
-    try:
-        resp = requests.post(AGGREGATOR_URL, json={"scores": scores}, timeout=10)
+        resp = requests.post(url, json=payload, timeout=20)
         resp.raise_for_status()
         data = resp.json()
-        return data
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"Error contacting aggregator: {e}")
+        return float(data.get(key, 0.0))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Error calling {url}: {e}")
 
-# ------------------------------------------------------------
-# Main Orchestration Endpoint
-# ------------------------------------------------------------
+def call_aggregator(scores: List[float]) -> Dict[str, Any]:
+    resp = requests.post(AGGREGATOR_URL, json={"scores": scores})
+    resp.raise_for_status()
+    return resp.json()
+
 @router.post("/fraud-check")
 def fraud_check(data: FraudInput):
-    """
-    Orchestrates all 3 agents and aggregates their scores.
-    Returns structured agent scores and a final risk score.
-    """
     payload = data.dict()
 
-    # Call agents individually
-    agent1_score = call_agent(AGENT1_URL, payload, "anomaly_score")
-    agent2_score = call_agent(AGENT2_URL, payload, "pattern_score")
-    agent3_score = call_agent(AGENT3_URL, payload, "fraud_probability")
+    a1 = call_agent(AGENT1_URL, payload, "anomaly_score")
+    a2 = call_agent(AGENT2_URL, payload, "pattern_score")
+    a3 = call_agent(AGENT3_URL, payload, "fraud_probability")
 
-    # Aggregate final score
-    agg_data = call_aggregator([agent1_score, agent2_score, agent3_score])
+    agg = call_aggregator([a1, a2, a3])
 
-    # Return structured response
     return {
-        "agent_scores": {
-            "agent1_anomaly": agent1_score,
-            "agent2_pattern": agent2_score,
-            "agent3_metadata": agent3_score
-        },
-        "final_risk_score": agg_data.get("final_score"),
-        "explanation": agg_data.get("explanation")
+        "agent_scores": {"agent1": a1, "agent2": a2, "agent3": a3},
+        "final_risk_score": agg.get("final_score"),
+        "explanation": agg.get("explanation"),
     }
-
-  

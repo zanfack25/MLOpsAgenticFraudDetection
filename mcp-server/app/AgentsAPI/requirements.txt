@@ -10,3 +10,4 @@ transformers
 joblib
 requests
 pydantic
+prophet
