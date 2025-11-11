@@ -42,7 +42,7 @@ def download_model(s3_key):
     return local_path
 
 
-def evaluate_model(agent_id, model):
+def evaluate_model(model):
     # """Run evaluation for a given agent using its full data model."""
     print("Evaluating Agent 2...")
     

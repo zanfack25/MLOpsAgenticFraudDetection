@@ -79,12 +79,15 @@ def evaluate_agent1(model, tx: DeviceIPLog):
     # One-hot encode categorical features
     df_encoded = pd.get_dummies(df)
     
-    # Align columns with training features
-    for col in model.feature_names_in_:
-        if col not in df_encoded.columns:
-            df_encoded[col] = 0
+    # Identify missing columns
+    missing_cols = [c for c in model.feature_names_in_ if c not in df_encoded.columns]
+    if missing_cols:
+        # Add missing columns all at once (avoids fragmentation warnings)
+        df_encoded = pd.concat([df_encoded, pd.DataFrame(0, index=df_encoded.index, columns=missing_cols)], axis=1)
+    
+    # Reorder columns to match training features
     df_encoded = df_encoded[model.feature_names_in_]
     
-    # Compute probability of fraud
-    score = 1 - model.decision_function(df_encoded)[0]
+    # Compute probability of fraud using Random Forest
+    score = model.predict_proba(df_encoded)[0][1]
     return float(score)
