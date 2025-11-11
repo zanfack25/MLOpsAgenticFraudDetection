@@ -107,7 +107,7 @@ def main():
         print(f"Failed to load model for Agent 2: {e}")
         return
 
-    score = evaluate_agent2_model(model)
+    score = evaluate_model(model)
     if score is not None:
         results = {"agent_2": {"score": float(score), "model_key": key}}
         upload_evaluation_results(results)

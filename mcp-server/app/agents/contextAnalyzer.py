@@ -28,13 +28,17 @@ from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
 from models.device_ip_logs import load_device_ip_logs, DeviceIPLog
 
-def train_agent1():
+def train_agent1(sample_size: int = 10000):
     """
     Loads device/IP logs and trains a Random Forest classifier for fraud detection.
     Returns trained model.
     """
     df = load_device_ip_logs()
     
+    # Downsample if dataset is larger than sample_size
+    if len(df) > sample_size:
+        df = df.sample(n=sample_size, random_state=42)
+
     # Features for training
     features = df[['step','type','amount','nameOrig','oldbalanceOrg','newbalanceOrig',
                    'nameDest','oldbalanceDest','newbalanceDest']]
