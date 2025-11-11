@@ -11,3 +11,4 @@ torch
 joblib
 requests
 pydantic
+prophet

@@ -82,5 +82,5 @@ def evaluate_agent1(model, tx: DeviceIPLog):
     df_encoded = df_encoded[model.feature_names_in_]
     
     # Compute probability of fraud
-    score = model.predict_proba(df_encoded)[0][1]
+    score = 1 - model.decision_function(df_encoded)[0]
     return float(score)
