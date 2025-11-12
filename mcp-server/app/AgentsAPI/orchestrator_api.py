@@ -10,7 +10,7 @@ import requests
 import os
 from typing import Dict, Any, List
 
-router = APIRouter(title="Fraud Detection Orchestrator")
+router = APIRouter(prefix="/orchestrator", tags=["Fraud Detection Orchestrator"])
 
 # ------------------------------------------------------------
 # Agent & Aggregator Endpoints (Configurable via Env)
@@ -82,3 +82,7 @@ def fraud_check(data: FraudInput):
         "final_risk_score": agg.get("final_score"),
         "explanation": agg.get("explanation"),
     }
+    
+@router.get("/status")
+async def orchestrator_status():
+    return {"status": "orchestrator active"}
