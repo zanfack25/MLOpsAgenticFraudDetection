@@ -10,19 +10,24 @@ import requests
 import os
 from typing import Dict, Any, List
 
-router = APIRouter(prefix="/orchestrator", tags=["Fraud Detection Orchestrator"])
+router = APIRouter()
 
 # ------------------------------------------------------------
 # Agent & Aggregator Endpoints (Configurable via Env)
 # ------------------------------------------------------------
-
-AGENT1_URL = os.getenv("AGENT1_URL", "http://localhost:8001/context-analyser/predict")
-AGENT2_URL = os.getenv("AGENT2_URL", "http://localhost:8002/transaction-history/predict")
-AGENT3_URL = os.getenv("AGENT3_URL", "http://localhost:8003/fraud-matcher/predict")
-AGGREGATOR_URL = os.getenv("AGGREGATOR_URL", "http://localhost:8004/aggregator/aggregate")
+# app/AgentsAPI/orchestrator_api.py
+# ------------------------------------------------------------
+# Update agent & aggregator URLs to use single port routes
+# ------------------------------------------------------------
+AGENT1_URL = "http://localhost:8000/context-analyser/predict"        # context_router
+AGENT2_URL = "http://localhost:8000/transaction-history/predict"     # profiler_router
+AGENT3_URL = "http://localhost:8000/fraud-matcher/predict"           # matcher_router
+AGGREGATOR_URL = "http://localhost:8000/aggregator/aggregate"        # aggregator_router
 
 class FraudInput(BaseModel):
-    # all shared fields (see your version)
+    # ------------------------------------------------------------
+    # Agent 1: Context Analyzer (transactional details)
+    # ------------------------------------------------------------
     step: int
     type: str
     amount: float
@@ -34,6 +39,10 @@ class FraudInput(BaseModel):
     newbalanceDest: float
     isFraud: int
     isFlaggedFraud: int
+
+    # ------------------------------------------------------------
+    # Agent 2: Transaction History Profiler (customer & card context)
+    # ------------------------------------------------------------
     event_timestamp: str
     event_id: str
     entity_type: str
@@ -50,8 +59,16 @@ class FraudInput(BaseModel):
     order_price: float
     merchant: str
     is_fraud: str
+
+    # ------------------------------------------------------------
+    # Agent 3: Fraud Pattern Matcher (metadata & device info)
+    # ------------------------------------------------------------
+    # ip_address: str : already exist in Agent 2
+    # merchant: str : already exist in Agent 2
+    # product_category: str : already exist in Agent 2
     user_agent: str
     metadata: str
+
 
 def call_agent(url: str, payload: Dict[str, Any], key: str) -> float:
     try:
@@ -67,21 +84,77 @@ def call_aggregator(scores: List[float]) -> Dict[str, Any]:
     resp.raise_for_status()
     return resp.json()
 
+
 @router.post("/fraud-check")
 def fraud_check(data: FraudInput):
     payload = data.dict()
 
-    a1 = call_agent(AGENT1_URL, payload, "anomaly_score")
-    a2 = call_agent(AGENT2_URL, payload, "pattern_score")
-    a3 = call_agent(AGENT3_URL, payload, "fraud_probability")
+    # -----------------------------
+    # Prepare per-agent payloads
+    # -----------------------------
 
-    agg = call_aggregator([a1, a2, a3])
+    #  Agent 1 – Context Analyzer
+    agent1_payload = {
+        "step": payload["step"],
+        "type": payload["type"],
+        "amount": payload["amount"],
+        "nameOrig": payload["nameOrig"],
+        "oldbalanceOrg": payload["oldbalanceOrg"],
+        "newbalanceOrig": payload["newbalanceOrig"],
+        "nameDest": payload["nameDest"],
+        "oldbalanceDest": payload["oldbalanceDest"],
+        "newbalanceDest": payload["newbalanceDest"],
+        "isFraud": payload["isFraud"],
+        "isFlaggedFraud": payload["isFlaggedFraud"],
+    }
+
+    # Agent 2 – Transaction History Profiler
+    agent2_payload = {
+        "event_timestamp": payload["event_timestamp"],
+        "event_id": payload["event_id"],
+        "entity_type": payload["entity_type"],
+        "entity_id": payload["entity_id"],
+        "card_bin": payload["card_bin"],
+        "customer_name": payload["customer_name"],
+        "billing_city": payload["billing_city"],
+        "billing_state": payload["billing_state"],
+        "billing_zip": payload["billing_zip"],
+        "billing_latitude": payload["billing_latitude"],
+        "billing_longitude": payload["billing_longitude"],
+        "ip_address": payload["ip_address"],
+        "product_category": payload["product_category"],
+        "order_price": payload["order_price"],
+        "merchant": payload["merchant"],
+        "is_fraud": payload["is_fraud"],
+    }
+
+    # Agent 3 – Fraud Matcher
+    agent3_payload = {
+        "ip_address": payload["ip_address"],
+        "user_agent": payload["user_agent"],
+        "merchant": payload["merchant"],
+        "product_category": payload["product_category"],
+        "metadata": payload["metadata"],
+    }
+
+    # -----------------------------
+    # Call agents
+    # -----------------------------
+    a1_score = call_agent(AGENT1_URL, agent1_payload, "anomaly_score")
+    a2_score = call_agent(AGENT2_URL, agent2_payload, "pattern_score")
+    a3_score = call_agent(AGENT3_URL, agent3_payload, "fraud_probability")
+
+    # -----------------------------
+    # Aggregate results
+    # -----------------------------
+    aggregator_result = call_aggregator([a1_score, a2_score, a3_score])
 
     return {
-        "agent_scores": {"agent1": a1, "agent2": a2, "agent3": a3},
-        "final_risk_score": agg.get("final_score"),
-        "explanation": agg.get("explanation"),
+        "agent_scores": {"agent1": a1_score, "agent2": a2_score, "agent3": a3_score},
+        "final_risk_score": aggregator_result.get("final_score"),
+        "explanation": aggregator_result.get("explanation"),
     }
+
     
 @router.get("/status")
 async def orchestrator_status():
