@@ -1,105 +1,105 @@
-name: Build_and_Deploy_Agents_API_Container
+# name: Build_and_Deploy_Agents_API_Container
 
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - "mcp-server/app/AgentsAPI/**"
-      - ".github/workflows/agentsapi-deploy.yml"
-  workflow_dispatch:
+# on:
+#   push:
+#     branches:
+#       - main
+#     paths:
+#       - "mcp-server/app/AgentsAPI/**"
+#       - ".github/workflows/agentsapi-deploy.yml"
+#   workflow_dispatch:
 
-env:
-  AWS_REGION: ca-central-1
-  ECR_REGISTRY: 111376855663.dkr.ecr.ca-central-1.amazonaws.com
-  ECR_REPOSITORY: fraud-detection-ecr-registry/agents-api
-  IMAGE_TAG: latest
-  SERVICE_ACCOUNT: fraud-detection-sa
+# env:
+#   AWS_REGION: ca-central-1
+#   ECR_REGISTRY: 111376855663.dkr.ecr.ca-central-1.amazonaws.com
+#   ECR_REPOSITORY: fraud-detection-ecr-registry/agents-api
+#   IMAGE_TAG: latest
+#   SERVICE_ACCOUNT: fraud-detection-sa
 
-jobs:
-  build-and-deploy-agentsapi:
-    runs-on: ubuntu-latest
+# jobs:
+#   build-and-deploy-agentsapi:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v2
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Authenticate Docker to ECR
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | \
-          docker login --username AWS --password-stdin $ECR_REGISTRY
+#       - name: Authenticate Docker to ECR
+#         run: |
+#           aws ecr get-login-password --region $AWS_REGION | \
+#           docker login --username AWS --password-stdin $ECR_REGISTRY
 
-      - name: Build Agents API Image
-        run: |
-          docker build -f mcp-server/app/AgentsAPI/Dockerfile -t fraud-detection-ecr-registry/agents-api .
-          docker tag fraud-detection-ecr-registry/agents-api:latest $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+#       - name: Build Agents API Image
+#         run: |
+#           docker build -f mcp-server/app/AgentsAPI/Dockerfile -t fraud-detection-ecr-registry/agents-api .
+#           docker tag fraud-detection-ecr-registry/agents-api:latest $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-      - name: Push Agents API Image to ECR
-        run: docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+#       - name: Push Agents API Image to ECR
+#         run: docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-      - name: Deploy API to EKS
-        run: |
-          aws eks update-kubeconfig --region $AWS_REGION --name FraudDetectionEKSCluster
-          kubectl delete deployment fraud-detection-api --ignore-not-found
-          cat <<EOF | kubectl apply -f -
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            name: fraud-detection-api
-          spec:
-            replicas: 2
-            selector:
-              matchLabels:
-                app: fraud-api
-            template:
-              metadata:
-                labels:
-                  app: fraud-api
-              spec:
-                serviceAccountName: ${SERVICE_ACCOUNT}
-                containers:
-                  - name: fraud-detection-api
-                    image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-                    ports:
-                      - containerPort: 8000
-                    env:
-                      - name: AWS_REGION
-                        value: "${AWS_REGION}"
-                      - name: MODEL_BUCKET
-                        value: "dav-fraud-detection-models"
-                    resources:
-                      requests:
-                        cpu: "4000m"
-                        memory: "16Gi"
-                        ephemeral-storage: "90Gi"
-                      limits:
-                        cpu: "4000m"
-                        memory: "32Gi"
-                        ephemeral-storage: "120Gi"
-          EOF
+#       - name: Deploy API to EKS
+#         run: |
+#           aws eks update-kubeconfig --region $AWS_REGION --name FraudDetectionEKSCluster
+#           kubectl delete deployment fraud-detection-api --ignore-not-found
+#           cat <<EOF | kubectl apply -f -
+#           apiVersion: apps/v1
+#           kind: Deployment
+#           metadata:
+#             name: fraud-detection-api
+#           spec:
+#             replicas: 2
+#             selector:
+#               matchLabels:
+#                 app: fraud-api
+#             template:
+#               metadata:
+#                 labels:
+#                   app: fraud-api
+#               spec:
+#                 serviceAccountName: ${SERVICE_ACCOUNT}
+#                 containers:
+#                   - name: fraud-detection-api
+#                     image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+#                     ports:
+#                       - containerPort: 8000
+#                     env:
+#                       - name: AWS_REGION
+#                         value: "${AWS_REGION}"
+#                       - name: MODEL_BUCKET
+#                         value: "dav-fraud-detection-models"
+#                     resources:
+#                       requests:
+#                         cpu: "4000m"
+#                         memory: "16Gi"
+#                         ephemeral-storage: "90Gi"
+#                       limits:
+#                         cpu: "4000m"
+#                         memory: "32Gi"
+#                         ephemeral-storage: "120Gi"
+#           EOF
 
-          # Create a LoadBalancer service to expose the API
-          echo "Creating LoadBalancer Service..."
-          kubectl delete service fraud-detection-api-service --ignore-not-found
-          cat <<EOF | kubectl apply -f -
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: fraud-detection-api-service
-          spec:
-            type: LoadBalancer
-            selector:
-              app: fraud-api
-            ports:
-              - protocol: TCP
-                port: 80
-                targetPort: 8000
-          EOF
-          echo "Deployment applied successfully."
+#           # Create a LoadBalancer service to expose the API
+#           echo "Creating LoadBalancer Service..."
+#           kubectl delete service fraud-detection-api-service --ignore-not-found
+#           cat <<EOF | kubectl apply -f -
+#           apiVersion: v1
+#           kind: Service
+#           metadata:
+#             name: fraud-detection-api-service
+#           spec:
+#             type: LoadBalancer
+#             selector:
+#               app: fraud-api
+#             ports:
+#               - protocol: TCP
+#                 port: 80
+#                 targetPort: 8000
+#           EOF
+#           echo "Deployment applied successfully."
