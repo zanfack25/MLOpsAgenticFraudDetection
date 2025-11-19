@@ -85,4 +85,4 @@ jobs:
                         ephemeral-storage: "120Gi"
           EOF
           
-          echo "API Deployment applied successfully."
+          echo "API Deployment applied successfully. B.S."
