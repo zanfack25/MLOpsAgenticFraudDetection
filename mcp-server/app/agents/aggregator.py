@@ -35,7 +35,7 @@ def aggregate(scores, weights=DEFAULT_WEIGHTS):
     # Weighted sum
     final_score = sum(w * s for w, s in zip(weights, scores))
 
-    # SHAP-style explanation (simulated)
+    # SHAP-style explanation (simulated) trigger build 
     explanation = {
         "agent_1_contribution": weights[0] * scores[0],
         "agent_2_contribution": weights[1] * scores[1],
