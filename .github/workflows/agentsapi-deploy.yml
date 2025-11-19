@@ -85,21 +85,4 @@ jobs:
                         ephemeral-storage: "120Gi"
           EOF
           
-          echo "Creating LoadBalancer Service..."
-          kubectl delete svc fraud-detection-api-service --ignore-not-found
-          cat <<EOF | kubectl apply -f -
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: fraud-detection-api-service
-          spec:
-            type: LoadBalancer
-            selector:
-              app: fraud-api
-            ports:
-              - protocol: TCP
-                port: 80
-                targetPort: 80
-          EOF
-
           echo "API Deployment applied successfully."

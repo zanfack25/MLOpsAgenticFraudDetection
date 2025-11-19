@@ -78,8 +78,8 @@ def load_latest_model():
 # Load Model and BERT Components
 # ------------------------------------------------------------
 model_bundle, model_key = load_latest_model()
-tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-bert_model = BertModel.from_pretrained("bert-base-uncased")
+vectorizer = model_bundle["vectorizer"]
+model = model_bundle["model"]
 
 # ------------------------------------------------------------
 # Prediction Endpoint
@@ -87,32 +87,20 @@ bert_model = BertModel.from_pretrained("bert-base-uncased")
 @router.post("/predict")
 def predict(tx: MetadataText):
     """
-    Evaluate a metadata record using BERT embeddings + structured features.
+    Evaluate a metadata record using TF-IDF + Logistic Regression.
     Returns fraud probability.
     """
     try:
-        df = pd.DataFrame([tx.dict()])
+        # Vectorize metadata text
+        X_tx = vectorizer.transform([tx.metadata])
 
-        # Step 1: BERT embedding for metadata text
-        inputs = tokenizer(tx.metadata, return_tensors="pt", truncation=True, padding=True)
-        with torch.no_grad():
-            output = bert_model(**inputs)
-        text_embedding = output.last_hidden_state.mean(dim=1).numpy().flatten()
-
-        structured = pd.get_dummies(df.drop(columns=["metadata"], errors="ignore")).to_numpy()
-        vector = np.concatenate([text_embedding, structured.flatten()])
-
-        model = model_bundle.get("model", model_bundle)
-        score = (
-            float(model.predict_proba([vector])[0][1])
-            if hasattr(model, "predict_proba")
-            else float(model.predict([vector])[0])
-        )
+        # Predict fraud probability
+        score = float(model.predict_proba(X_tx)[0][1])
 
         return {
             "agent_id": 3,
             "model_key": model_key,
-            "model_name": "BERT + XGBoost (Full Features)",
+            "model_name": "TF-IDF + Logistic Regression",
             "fraud_probability": score
         }
 
