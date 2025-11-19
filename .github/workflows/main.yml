@@ -8,27 +8,27 @@ env:
   MODEL_BUCKET: dav-fraud-detection-models
   AWS_REGION: ca-central-1
 
-jobs:
-   build-agent1:
-     uses: ./.github/workflows/agent1-workflow.yml
-     with:
-       image_tag: latest
-     secrets:
-       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+# jobs:
+#    build-agent1:
+#      uses: ./.github/workflows/agent1-workflow.yml
+#      with:
+#        image_tag: latest
+#      secrets:
+#        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-   build-agent2:
-     uses: ./.github/workflows/agent2-workflow.yml
-     with:
-       image_tag: latest
-     secrets:
-       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#    build-agent2:
+#      uses: ./.github/workflows/agent2-workflow.yml
+#      with:
+#        image_tag: latest
+#      secrets:
+#        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-   build-agent3:
-     uses: ./.github/workflows/agent3-workflow.yml
-     with:
-       image_tag: latest
-     secrets:
-       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#    build-agent3:
+#      uses: ./.github/workflows/agent3-workflow.yml
+#      with:
+#        image_tag: latest
+#      secrets:
+#        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

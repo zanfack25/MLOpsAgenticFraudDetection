@@ -25,7 +25,7 @@ app.include_router(profiler_router, prefix="/transaction-history", tags=["Transa
 app.include_router(orchestrator_router, prefix="/orchestrator", tags=["Orchestrator"])
 
 # ------------------------------------------------------------
-# Root endpoint for sanity check
+# Root endpoint for sanity check / health check
 # ------------------------------------------------------------
 @app.get("/")
 def root():

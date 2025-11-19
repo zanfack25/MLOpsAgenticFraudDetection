@@ -19,10 +19,10 @@ router = APIRouter()
 # ------------------------------------------------------------
 # Update agent & aggregator URLs to use single port routes
 # ------------------------------------------------------------
-AGENT1_URL = "http://localhost:8000/context-analyser/predict"        # context_router
-AGENT2_URL = "http://localhost:8000/transaction-history/predict"     # profiler_router
-AGENT3_URL = "http://localhost:8000/fraud-matcher/predict"           # matcher_router
-AGGREGATOR_URL = "http://localhost:8000/aggregator/aggregate"        # aggregator_router
+AGENT1_URL = "http://localhost:80/context-analyser/predict"        # context_router
+AGENT2_URL = "http://localhost:80/transaction-history/predict"     # profiler_router
+AGENT3_URL = "http://localhost:80/fraud-matcher/predict"           # matcher_router
+AGGREGATOR_URL = "http://localhost:80/aggregator/aggregate"        # aggregator_router
 
 class FraudInput(BaseModel):
     # ------------------------------------------------------------

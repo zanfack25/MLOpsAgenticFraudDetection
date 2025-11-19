@@ -55,10 +55,10 @@ ENV PYTHONUNBUFFERED=1 \
 # -----------------------------
 # Expose FastAPI port
 # -----------------------------
-EXPOSE 8000
+EXPOSE 80
 
 # -----------------------------
 # Default command (production)
 # -----------------------------
 # Uvicorn’s reload watcher can break in Docker containers in production mode.
-CMD ["uvicorn", "AgentsAPI.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+CMD ["uvicorn", "AgentsAPI.main:app", "--host", "0.0.0.0", "--port", "80", "--workers", "4"]
