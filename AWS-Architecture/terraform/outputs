@@ -1,0 +1,29 @@
+
+############################################
+# OUTPUTS
+############################################
+output "alb_dns" {
+  value       = aws_lb.web_alb.dns_name
+  description = "Access the web server via this DNS"
+}
+
+output "AppSecurityGroupId" {
+  value       = aws_security_group.alb_sg.id
+  description = "Security Group used by the ALB / ECS tasks"
+}
+
+output "VpcId" {
+  value       = aws_vpc.project_vpc.id
+  description = "ID of the created VPC"
+}
+
+
+output "ecs_cluster_id" {
+  value = aws_ecs_cluster.web_cluster.id
+}
+
+output "redshift_endpoint" {
+  value = aws_redshift_cluster.analytics_cluster.endpoint
+}
+
+
