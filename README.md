@@ -6,12 +6,6 @@
 
 ## Business Use case 
 
-Below is a **complete, professional GitHub README.md** you can directly use for your repository.
-It is structured for an **engineering-grade / portfolio project**, aligned with **AWS, MLOps, Agentic AI, and Terraform IaC best practices**.
-
-You can copy–paste this into `README.md` and adjust names if needed.
-
----
 
 # AWS Cloud-Based Agentic Fraud Detection & Response System
 
