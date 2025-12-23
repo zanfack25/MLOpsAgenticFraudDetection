@@ -4,6 +4,13 @@
 
 ![High-level architecture](docs/images/fraud-detection-aws-infrastructure.png)
 
+
+##  CI / CD deployment Pipeline 
+
+![CI / CD Deployment pipeline](docs/images/github-ci-cd-pipeline-.png)
+
+![CI / CD Deployment pipeline](docs/images/github-ci-cd-workflow.png)
+
 ## Business Use case 
 
 
@@ -83,13 +90,13 @@ A sudden $5,000 transaction is attempted from the Bahamas.
 6. Customer feedback updates future model behavior
 7. Full audit trail logged for compliance
 
-✅ Fraud stopped
-✅ Minimal customer friction
-✅ Continuous system learning
+-Fraud stopped
+-Minimal customer friction
+-Continuous system learning
 
 ---
 
-## 🧱 Architecture Overview
+## Architecture Overview
 
 ```text
 Client / Banking App
@@ -178,24 +185,56 @@ Client / Banking App
 
 ## Cloud Infrastructure (AWS)
 
-### Compute
+### Networking Layer
+
+
+![Infrastructure Network architecture](docs/images/infra-network-layer.png)
+
+
+### Compute Layer
+
 
 * **EKS** – Model training & experimentation
+
+![High-level architecture](docs/images/infra-network-EKS-cluster-training.png)
+
+* **Trined Models storage** – store trained models in S3 buckets 
+![Infrastructure Data Bucket for models storage](docs/images/infra-storage-bucket-models.png)
+
+![Bucket for context analyser](docs/images/infra-storage-bucket-context-analyser-model.png)
+
+
 * **ECS Fargate** – Auto-scaling inference services
-* **Lambda** – Event-driven agent orchestration
-* **ALB** – Load balancing
+
+  ![Architecture ECS Service Cluster](docs/images/backend-layer-ecs-service-cluster.png)
+  
+  ![Architecture AUtoscaling Target instances](docs/images/backend-layer-ecs-service-cluster-autoscaling-target-instances.png)
+  
+* **Application Load balancing and Autoscling Target Group** – workload 
+ ![Architecture Load balancer target group](docs/images/backend-layer-ecs-service-cluster-autoscaling-target-group.png)
+  
 
 ### Data
 
 * **Amazon S3** – Model storage (`fraud-detection-models`)
 * **Amazon Redshift** – Transaction warehouse
-* **Neo4j** – Graph trust relationships
-* **Redis** – Low-latency caching
+* **Grafana** – Dashbord and metrics
+  ![Transactions Data Model](docs/images/data-model.png)
+  
+  ![Redshift Cluster Deployment](docs/images/redshift-cluster.png)
+
+  ![Redshift Transactions Table](docs/images/redshift-cluster-transactions-table.png)
+
+  ![Redshift Transactions Table](docs/images/redshift-cluster-transactions-table-1.png)
+
+  ![Redshift Transactions SELECT test](docs/images/redshift-cluster-query-select-all.png)
+  
+
 
 ### Streaming & Messaging
 
-* **Amazon Kinesis** – Real-time ingestion
-* **Kafka / SQS** – Agent communication
+* **Amazon Redshift** – Real-time data ingestion
+* **SNS** – Agent communication and notification
 
 ---
 
@@ -232,6 +271,20 @@ All infrastructure is deployed using **Terraform**, ensuring:
 * Load balancers
 * Storage & monitoring
 
+ ![Terraform infrastructure initiation](docs/images/terraform-infra-init.png)
+  
+![Terraform apply](docs/images/dterraform-infra-apply.png)
+  
+![Terraform infrastructure deployment completed](docs/images/terraform-infra-deployment-completed.png)
+
+
+![Terraform infrastructure Network layer](docs/images/infra-network-layer.png)
+
+
+![Container ECR Registry](docs/images/ecr-registry.png)
+  
+  
+   
 ---
 
 ##  Model Training & MLOps
@@ -242,15 +295,18 @@ All infrastructure is deployed using **Terraform**, ensuring:
 * **CI/CD** for agent deployment
 * Continuous feedback loop from customer responses
 
+
+ ![EKS Clusters for Models training](docs/images/infra-network-EKS-cluster-training.png)
+  
 ---
 
-## 🖥️ Backend & Frontend
+## Backend & Frontend
 
 ### Backend
 
 * **FastAPI & Node.js**
 * Real-time model invocation
-* Agent orchestration APIs
+* Agent containerization and orchestration APIs
 
 ### Frontend
 
@@ -258,6 +314,15 @@ All infrastructure is deployed using **Terraform**, ensuring:
 * Transaction dashboard
 * Fraud analytics by region
 * Real-time alerts
+
+
+ ![Grafana Dashboard](docs/images/grafana-daschboard.png)
+  
+ ![Frontend Layer for Transactions Listing](docs/images/frontend-layer-transaction-list.png)
+
+
+ ![HTransactions Dashboard](docs/images/frontend-layer-daschboard.png)
+
 
 ---
 
@@ -298,7 +363,7 @@ The system achieves **higher precision, lower false positives, improved customer
 
 ---
 
-## 📄 License
+## License
 
 MIT License
 
